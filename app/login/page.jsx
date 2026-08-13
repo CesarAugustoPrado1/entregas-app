@@ -36,11 +36,11 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-8 max-w-sm w-full">
-        <h1 className="text-xl font-semibold mb-6 text-center">Entregas — Iniciar sesión</h1>
+        <h1 className="text-xl font-semibold mb-6 text-center text-gray-900">Entregas — Iniciar sesión</h1>
         {error && (
           <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4">{error}</div>
         )}
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label className="block text-sm font-medium mb-1 text-gray-800">Email</label>
         <input
           type="email"
           value={email}
@@ -48,7 +48,7 @@ export default function LoginPage() {
           required
           className="w-full border rounded-lg px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-blue-400"
         />
-        <label className="block text-sm font-medium mb-1">Contraseña</label>
+        <label className="block text-sm font-medium mb-1 text-gray-800">Contraseña</label>
         <input
           type="password"
           value={password}

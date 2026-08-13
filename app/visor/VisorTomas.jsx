@@ -207,7 +207,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
     <main className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-semibold">Tomas guardadas</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Tomas guardadas</h1>
           <div className="flex items-center gap-3">
             {tomas.length > 0 && (
               <button
@@ -302,7 +302,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 limpiarCliente();
                 setPedido('');
               }}
-              className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
             >
               Limpiar filtros
             </button>
@@ -354,7 +354,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                     )}
                   </div>
                   <div className="p-2">
-                    <p className="text-xs font-medium truncate">{t.cliente_nombre}</p>
+                    <p className="text-xs font-medium truncate text-gray-900">{t.cliente_nombre}</p>
                     <p className="text-[11px] text-gray-700 truncate">{t.pedidos.join(', ')}</p>
                     <p className="text-[11px] text-gray-700">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
                   </div>
@@ -370,7 +370,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
           <div className="text-center mt-5">
             <button
               onClick={() => cargarTomas(offset + PAGE_SIZE)}
-              className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
             >
               Cargar más
             </button>
@@ -397,7 +397,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             <button
               type="button"
               onClick={cancelarSeleccion}
-              className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
             >
               Cancelar
             </button>
@@ -482,7 +482,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 <button
                   type="button"
                   onClick={() => setTomaAbierta(null)}
-                  className="flex-1 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+                  className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
                 >
                   Cerrar
                 </button>

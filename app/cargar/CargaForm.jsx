@@ -226,7 +226,7 @@ export default function CargaForm() {
   return (
     <main className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-md">
-        <h1 className="text-xl font-semibold mb-5 text-center">Cargar toma</h1>
+        <h1 className="text-xl font-semibold mb-5 text-center text-gray-900">Cargar toma</h1>
 
         {exito && (
           <div className="bg-green-50 text-green-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">
@@ -241,7 +241,7 @@ export default function CargaForm() {
           <div className="bg-white rounded-xl shadow p-5 mb-4">
             {/* Cliente */}
             <div ref={contenedorRef} className="relative mb-4">
-              <label className="block text-sm font-medium mb-1">Cliente</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Cliente</label>
               <input
                 type="text"
                 value={query}
@@ -279,7 +279,7 @@ export default function CargaForm() {
 
             {/* Pedidos */}
             <div>
-              <label className="block text-sm font-medium mb-1">Números de pedido</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Números de pedido</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -294,7 +294,7 @@ export default function CargaForm() {
                 <button
                   type="button"
                   onClick={agregarPedido}
-                  className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+                  className="px-3 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
                 >
                   Agregar
                 </button>
@@ -325,7 +325,7 @@ export default function CargaForm() {
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-xs text-gray-700">Cliente</p>
-                <p className="text-sm font-medium">{clienteSeleccionado.nombre}</p>
+                <p className="text-sm font-medium text-gray-900">{clienteSeleccionado.nombre}</p>
               </div>
               <button
                 type="button"
@@ -370,7 +370,7 @@ export default function CargaForm() {
               <button
                 type="button"
                 onClick={agregarPedido}
-                className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+                className="px-3 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
               >
                 +
               </button>
@@ -387,7 +387,7 @@ export default function CargaForm() {
           <div className="bg-white rounded-xl shadow p-5 mb-4">
             {/* Foto / video */}
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Foto o video</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Foto o video</label>
               <input
                 ref={fotoInputRef}
                 type="file"
@@ -437,7 +437,7 @@ export default function CargaForm() {
 
             {/* Observaciones */}
             <div>
-              <label className="block text-sm font-medium mb-1">Observaciones (opcional)</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Observaciones (opcional)</label>
               <textarea
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
