@@ -23,6 +23,10 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
 
   const [tomaAbierta, setTomaAbierta] = useState(null);
   const [eliminando, setEliminando] = useState(false);
+  const [compartiendo, setCompartiendo] = useState(false);
+
+  const [seleccionActiva, setSeleccionActiva] = useState(false);
+  const [seleccionados, setSeleccionados] = useState(() => new Set());
 
   const debounceRef = useRef(null);
   const contenedorRef = useRef(null);
@@ -106,6 +110,83 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
     }
   };
 
+  const textoToma = (t) =>
+    `Cliente: ${t.cliente_nombre}\nPedidos: ${t.pedidos.join(', ')}\nFecha: ${new Date(t.fecha_hora).toLocaleString('es-AR')}\n${t.archivo_url}`;
+
+  const archivoDeToma = async (t) => {
+    const res = await fetch(t.archivo_url);
+    const blob = await res.blob();
+    const ext = t.tipo === 'video' ? 'mp4' : 'jpg';
+    return new File([blob], `toma-${t.id}.${ext}`, { type: blob.type });
+  };
+
+  const compartirToma = async (t) => {
+    setError('');
+    setCompartiendo(true);
+    try {
+      if (navigator.canShare) {
+        const archivo = await archivoDeToma(t);
+        if (navigator.canShare({ files: [archivo] })) {
+          await navigator.share({ files: [archivo], title: `Toma - ${t.cliente_nombre}`, text: textoToma(t) });
+          return;
+        }
+      }
+      if (navigator.share) {
+        await navigator.share({ title: `Toma - ${t.cliente_nombre}`, text: textoToma(t) });
+      } else {
+        setError('Tu navegador no soporta compartir directo. Usá los botones de WhatsApp o email.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError('No se pudo compartir el archivo. Usá los botones de WhatsApp o email.');
+      }
+    } finally {
+      setCompartiendo(false);
+    }
+  };
+
+  const toggleSeleccion = (id) => {
+    setSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const cancelarSeleccion = () => {
+    setSeleccionActiva(false);
+    setSeleccionados(new Set());
+  };
+
+  const compartirSeleccionados = async () => {
+    setError('');
+    const elegidas = tomas.filter((t) => seleccionados.has(t.id));
+    if (elegidas.length === 0) return;
+
+    setCompartiendo(true);
+    try {
+      if (navigator.canShare) {
+        const archivos = await Promise.all(elegidas.map(archivoDeToma));
+        if (navigator.canShare({ files: archivos })) {
+          await navigator.share({ files: archivos, title: 'Tomas seleccionadas' });
+          return;
+        }
+      }
+      if (navigator.share) {
+        await navigator.share({ title: 'Tomas seleccionadas', text: elegidas.map(textoToma).join('\n\n') });
+      } else {
+        setError('Tu navegador no soporta compartir directo. Abrí cada toma y usá los botones de WhatsApp o email.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError('No se pudo compartir. Abrí cada toma y usá los botones de WhatsApp o email.');
+      }
+    } finally {
+      setCompartiendo(false);
+    }
+  };
+
   const eliminarToma = async (id) => {
     setEliminando(true);
     setError('');
@@ -127,15 +208,26 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-5">
           <h1 className="text-xl font-semibold">Tomas guardadas</h1>
-          <Link href="/" className="text-sm text-blue-600 hover:underline">
-            Volver
-          </Link>
+          <div className="flex items-center gap-3">
+            {tomas.length > 0 && (
+              <button
+                type="button"
+                onClick={() => (seleccionActiva ? cancelarSeleccion() : setSeleccionActiva(true))}
+                className="text-sm text-blue-600 hover:underline"
+              >
+                {seleccionActiva ? 'Cancelar selección' : 'Seleccionar'}
+              </button>
+            )}
+            <Link href="/" className="text-sm text-blue-600 hover:underline">
+              Volver
+            </Link>
+          </div>
         </div>
 
         {/* Filtros */}
         <div className="bg-white rounded-xl shadow p-4 mb-5 grid gap-3 sm:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
             <input
               type="date"
               value={desde}
@@ -145,7 +237,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
             <input
               type="date"
               value={hasta}
@@ -155,7 +247,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             />
           </div>
           <div ref={contenedorRef} className="relative">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Cliente</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Cliente</label>
             <input
               type="text"
               value={clienteQuery}
@@ -168,7 +260,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               <button
                 type="button"
                 onClick={limpiarCliente}
-                className="absolute right-2 top-[30px] text-gray-400 text-sm leading-none"
+                className="absolute right-2 top-[30px] text-gray-700 text-sm leading-none"
               >
                 ×
               </button>
@@ -190,7 +282,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">N° de pedido</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">N° de pedido</label>
             <input
               type="text"
               inputMode="numeric"
@@ -231,34 +323,48 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
 
         {/* Grilla */}
         {tomas.length === 0 && !cargando ? (
-          <p className="text-center text-sm text-gray-400 mt-10">No hay tomas para estos filtros.</p>
+          <p className="text-center text-sm text-gray-700 mt-10">No hay tomas para estos filtros.</p>
         ) : (
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {tomas.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTomaAbierta(t)}
-                className="bg-white rounded-lg shadow overflow-hidden text-left"
-              >
-                <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
-                  {t.tipo === 'video' ? (
-                    <video src={t.archivo_url} className="w-full h-full object-cover" muted />
-                  ) : (
-                    <img src={t.archivo_url} alt="" className="w-full h-full object-cover" />
+            {tomas.map((t) => {
+              const seleccionada = seleccionados.has(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => (seleccionActiva ? toggleSeleccion(t.id) : setTomaAbierta(t))}
+                  className={`relative bg-white rounded-lg shadow overflow-hidden text-left ${
+                    seleccionada ? 'ring-2 ring-blue-600' : ''
+                  }`}
+                >
+                  {seleccionActiva && (
+                    <span
+                      className={`absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[11px] font-bold ${
+                        seleccionada ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/90 border-gray-400'
+                      }`}
+                    >
+                      {seleccionada ? '✓' : ''}
+                    </span>
                   )}
-                </div>
-                <div className="p-2">
-                  <p className="text-xs font-medium truncate">{t.cliente_nombre}</p>
-                  <p className="text-[11px] text-gray-400 truncate">{t.pedidos.join(', ')}</p>
-                  <p className="text-[11px] text-gray-400">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
-                </div>
-              </button>
-            ))}
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                    {t.tipo === 'video' ? (
+                      <video src={t.archivo_url} className="w-full h-full object-cover" muted />
+                    ) : (
+                      <img src={t.archivo_url} alt="" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-medium truncate">{t.cliente_nombre}</p>
+                    <p className="text-[11px] text-gray-700 truncate">{t.pedidos.join(', ')}</p>
+                    <p className="text-[11px] text-gray-700">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {cargando && <p className="text-center text-sm text-gray-400 mt-4">Cargando...</p>}
+        {cargando && <p className="text-center text-sm text-gray-700 mt-4">Cargando...</p>}
 
         {hayMas && !cargando && (
           <div className="text-center mt-5">
@@ -270,7 +376,34 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             </button>
           </div>
         )}
+
+        {seleccionActiva && seleccionados.size > 0 && <div className="h-20" />}
       </div>
+
+      {seleccionActiva && seleccionados.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-3 flex items-center justify-between gap-3 z-10">
+          <p className="text-sm text-gray-800">
+            {seleccionados.size} seleccionada{seleccionados.size !== 1 ? 's' : ''}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={compartirSeleccionados}
+              disabled={compartiendo}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              {compartiendo ? 'Preparando...' : 'Compartir'}
+            </button>
+            <button
+              type="button"
+              onClick={cancelarSeleccion}
+              className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal de detalle */}
       {tomaAbierta && (
@@ -291,21 +424,21 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
             </div>
             <div className="p-4 space-y-2">
               <p className="text-sm">
-                <span className="text-gray-400">Cliente:</span> {tomaAbierta.cliente_nombre}
+                <span className="text-gray-700">Cliente:</span> {tomaAbierta.cliente_nombre}
               </p>
               <p className="text-sm">
-                <span className="text-gray-400">Pedidos:</span> {tomaAbierta.pedidos.join(', ')}
+                <span className="text-gray-700">Pedidos:</span> {tomaAbierta.pedidos.join(', ')}
               </p>
               <p className="text-sm">
-                <span className="text-gray-400">Fecha:</span>{' '}
+                <span className="text-gray-700">Fecha:</span>{' '}
                 {new Date(tomaAbierta.fecha_hora).toLocaleString('es-AR')}
               </p>
               <p className="text-sm">
-                <span className="text-gray-400">Cargado por:</span> {tomaAbierta.usuario_nombre}
+                <span className="text-gray-700">Cargado por:</span> {tomaAbierta.usuario_nombre}
               </p>
               {tomaAbierta.observaciones && (
                 <p className="text-sm">
-                  <span className="text-gray-400">Observaciones:</span> {tomaAbierta.observaciones}
+                  <span className="text-gray-700">Observaciones:</span> {tomaAbierta.observaciones}
                 </p>
               )}
               {tomaAbierta.drive_url && (
@@ -319,6 +452,32 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 </a>
               )}
 
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={compartiendo}
+                  onClick={() => compartirToma(tomaAbierta)}
+                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {compartiendo ? 'Preparando...' : 'Compartir'}
+                </button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(textoToma(tomaAbierta))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium text-center"
+                >
+                  WhatsApp
+                </a>
+                <a
+                  href={`mailto:?subject=${encodeURIComponent(
+                    `Toma - ${tomaAbierta.cliente_nombre}`
+                  )}&body=${encodeURIComponent(textoToma(tomaAbierta))}`}
+                  className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium text-center"
+                >
+                  Email
+                </a>
+              </div>
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"

@@ -63,6 +63,10 @@ export default function LoginPage() {
         >
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
+
+        <p className="text-xs text-gray-700 text-center mt-4">
+          ¿Olvidaste tu contraseña? Pedile a un administrador que te la resetee desde Usuarios.
+        </p>
       </form>
     </main>
   );

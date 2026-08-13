@@ -27,7 +27,8 @@ export default function CargaForm() {
 
   const debounceRef = useRef(null);
   const contenedorRef = useRef(null);
-  const fileInputRef = useRef(null);
+  const fotoInputRef = useRef(null);
+  const videoInputRef = useRef(null);
 
   useEffect(() => {
     const onClick = (e) => {
@@ -107,6 +108,14 @@ export default function CargaForm() {
     }
   };
 
+  const pedidosConPendiente = () => {
+    const val = pedidoActual.trim();
+    if (val && /^\d+$/.test(val) && !pedidos.includes(val)) {
+      return [...pedidos, val];
+    }
+    return pedidos;
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,10 +141,13 @@ export default function CargaForm() {
       setError('Elegí un cliente de la lista');
       return;
     }
-    if (pedidos.length === 0) {
+    const pedidosFinal = pedidosConPendiente();
+    if (pedidosFinal.length === 0) {
       setError('Agregá al menos un número de pedido');
       return;
     }
+    setPedidos(pedidosFinal);
+    setPedidoActual('');
     setExito(false);
     setTomasGuardadas(0);
     setEntregaActiva(true);
@@ -162,6 +174,14 @@ export default function CargaForm() {
       return;
     }
 
+    const pedidosFinal = pedidosConPendiente();
+    if (pedidosFinal.length === 0) {
+      setError('Agregá al menos un número de pedido');
+      return;
+    }
+    setPedidos(pedidosFinal);
+    setPedidoActual('');
+
     setSubiendo(true);
     try {
       const tipo = archivo.type.startsWith('video/') ? 'video' : 'foto';
@@ -177,7 +197,7 @@ export default function CargaForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cliente_id: clienteSeleccionado.id,
-          pedidos,
+          pedidos: pedidosFinal,
           archivo_url: blob.url,
           tipo,
           observaciones,
@@ -245,7 +265,7 @@ export default function CargaForm() {
                       </li>
                     ))
                   ) : (
-                    <li className="px-3 py-2 text-sm text-gray-400">
+                    <li className="px-3 py-2 text-sm text-gray-700">
                       No se encontraron clientes con ese nombre
                     </li>
                   )}
@@ -267,6 +287,7 @@ export default function CargaForm() {
                   value={pedidoActual}
                   onChange={(e) => setPedidoActual(e.target.value)}
                   onKeyDown={handlePedidoKeyDown}
+                  onBlur={agregarPedido}
                   placeholder="Ej: 4521"
                   className="flex-1 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
                 />
@@ -303,7 +324,7 @@ export default function CargaForm() {
           <div className="bg-white rounded-xl shadow p-4 mb-4">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-xs text-gray-400">Cliente</p>
+                <p className="text-xs text-gray-700">Cliente</p>
                 <p className="text-sm font-medium">{clienteSeleccionado.nombre}</p>
               </div>
               <button
@@ -315,7 +336,7 @@ export default function CargaForm() {
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 mb-1">Pedidos</p>
+            <p className="text-xs text-gray-700 mb-1">Pedidos</p>
             {pedidos.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {pedidos.map((p) => (
@@ -342,6 +363,7 @@ export default function CargaForm() {
                 value={pedidoActual}
                 onChange={(e) => setPedidoActual(e.target.value)}
                 onKeyDown={handlePedidoKeyDown}
+                onBlur={agregarPedido}
                 placeholder="Agregar otro pedido"
                 className="flex-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-400"
               />
@@ -354,7 +376,7 @@ export default function CargaForm() {
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 mt-3">
+            <p className="text-xs text-gray-700 mt-3">
               {tomasGuardadas} toma{tomasGuardadas !== 1 ? 's' : ''} guardada{tomasGuardadas !== 1 ? 's' : ''} en
               esta entrega
             </p>
@@ -367,20 +389,37 @@ export default function CargaForm() {
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Foto o video</label>
               <input
-                ref={fileInputRef}
+                ref={fotoInputRef}
                 type="file"
-                accept="image/*,video/*"
+                accept="image/*"
                 capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full border-2 border-dashed rounded-lg py-4 text-sm text-gray-600"
-              >
-                {archivo ? 'Cambiar foto o video' : 'Tomar foto o video'}
-              </button>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => fotoInputRef.current?.click()}
+                  className="border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium"
+                >
+                  📷 Sacar foto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  className="border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium"
+                >
+                  🎥 Grabar video
+                </button>
+              </div>
 
               {previewUrl && archivo && (
                 <div className="mt-3">
@@ -389,7 +428,7 @@ export default function CargaForm() {
                   ) : (
                     <img src={previewUrl} alt="Vista previa" className="w-full rounded-lg max-h-64 object-contain" />
                   )}
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-700 mt-1">
                     Capturado: {fechaHoraCaptura?.toLocaleString('es-AR')}
                   </p>
                 </div>
