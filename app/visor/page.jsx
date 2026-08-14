@@ -17,5 +17,11 @@ export default async function VisorPage() {
 
   const tomasIniciales = await listarTomas({ limit: 40, offset: 0 });
 
-  return <VisorTomas esAdmin={usuario.rol === 'admin'} tomasIniciales={tomasIniciales} />;
+  return (
+    <VisorTomas
+      esAdmin={usuario.rol === 'admin'}
+      puedeCargar={requiereRol(usuario, ['admin', 'operario'])}
+      tomasIniciales={tomasIniciales}
+    />
+  );
 }

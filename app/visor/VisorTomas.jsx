@@ -2,10 +2,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
+import { IconoFoto, IconoVideo } from '@/app/components/Iconos';
 
 const PAGE_SIZE = 40;
 
-export default function VisorTomas({ esAdmin, tomasIniciales }) {
+export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
 
@@ -195,6 +196,11 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 {seleccionActiva ? 'Cancelar selección' : 'Seleccionar'}
               </button>
             )}
+            {puedeCargar && (
+              <Link href="/cargar" className="text-sm text-blue-600 hover:underline">
+                Cargar toma
+              </Link>
+            )}
             <Link href="/" className="text-sm text-blue-600 hover:underline">
               Volver
             </Link>
@@ -337,7 +343,14 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                       {seleccionada ? '✓' : ''}
                     </span>
                   )}
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
+                  <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                    <span className="absolute top-1.5 right-1.5 z-10 bg-black/60 text-white rounded-full p-1">
+                      {t.tipo === 'video' ? (
+                        <IconoVideo className="w-3.5 h-3.5" />
+                      ) : (
+                        <IconoFoto className="w-3.5 h-3.5" />
+                      )}
+                    </span>
                     {t.tipo === 'video' ? (
                       <video src={t.archivo_url} className="w-full h-full object-cover" muted />
                     ) : (
@@ -417,6 +430,14 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               {error && (
                 <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 text-center">{error}</div>
               )}
+              <p className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                {tomaAbierta.tipo === 'video' ? (
+                  <IconoVideo className="w-4 h-4 text-blue-600" />
+                ) : (
+                  <IconoFoto className="w-4 h-4 text-blue-600" />
+                )}
+                {tomaAbierta.tipo === 'video' ? 'Video' : 'Foto'}
+              </p>
               <p className="text-sm">
                 <span className="text-gray-700">Cliente:</span> {tomaAbierta.cliente_nombre}
               </p>

@@ -1,7 +1,9 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
 import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
+import { IconoFoto, IconoVideo } from '@/app/components/Iconos';
 
 function ChipsPedidos({ pedidos, onQuitar, className = '' }) {
   if (pedidos.length === 0) return null;
@@ -210,7 +212,12 @@ export default function CargaForm() {
   return (
     <main className="min-h-screen bg-gray-50 p-4 sm:p-6 flex justify-center">
       <div className="w-full max-w-md">
-        <h1 className="text-xl font-semibold mb-5 text-center text-gray-900">Cargar toma</h1>
+        <div className="flex items-center justify-between mb-5">
+          <h1 className="text-xl font-semibold text-gray-900">Cargar toma</h1>
+          <Link href="/" className="text-sm text-blue-600 hover:underline">
+            Volver
+          </Link>
+        </div>
 
         {exito && (
           <div className="bg-green-50 text-green-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">
@@ -356,16 +363,18 @@ export default function CargaForm() {
                 <button
                   type="button"
                   onClick={() => fotoInputRef.current?.click()}
-                  className="border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium"
+                  className="flex flex-col items-center gap-1.5 border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-gray-50 hover:border-blue-400 transition-colors"
                 >
-                  📷 Sacar foto
+                  <IconoFoto className="w-7 h-7 text-blue-600" />
+                  Sacar foto
                 </button>
                 <button
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
-                  className="border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium"
+                  className="flex flex-col items-center gap-1.5 border-2 border-dashed rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-gray-50 hover:border-blue-400 transition-colors"
                 >
-                  🎥 Grabar video
+                  <IconoVideo className="w-7 h-7 text-blue-600" />
+                  Grabar video
                 </button>
               </div>
 
