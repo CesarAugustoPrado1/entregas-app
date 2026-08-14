@@ -137,31 +137,14 @@ export default function CargaForm() {
     setEntregaActiva(true);
   };
 
-  const finalizarEntrega = () => {
-    setClienteSeleccionado(null);
-    cliente.limpiar();
-    setPedidos([]);
-    setPedidoActual('');
-    limpiarCaptura();
-    setEntregaActiva(false);
-    setTomasGuardadas(0);
-    setExito(false);
-    setError('');
-  };
-
-  const guardarToma = async () => {
-    setError('');
-    setExito(false);
-
-    if (!archivo) {
-      setError('Sacá una foto o un video');
-      return;
-    }
+  // Sube y guarda la captura pendiente. Devuelve true si se guardó (o si no había nada que guardar).
+  const subirTomaPendiente = async () => {
+    if (!archivo) return true;
 
     const pedidosFinal = pedidosConPendiente();
     if (pedidosFinal.length === 0) {
       setError('Agregá al menos un número de pedido');
-      return;
+      return false;
     }
     setPedidos(pedidosFinal);
     setPedidoActual('');
@@ -196,17 +179,49 @@ export default function CargaForm() {
       if (!data.ok) throw new Error(data.error || 'No se pudo guardar la toma');
 
       setTomasGuardadas((n) => n + 1);
-      setExito(true);
       limpiarCaptura();
+      return true;
     } catch (err) {
       if (err.message?.includes('client token')) {
         setError('Tu sesión venció o no es válida. Volvé a iniciar sesión e intentá de nuevo.');
       } else {
         setError(err.message || 'No se pudo guardar la toma');
       }
+      return false;
     } finally {
       setSubiendo(false);
     }
+  };
+
+  const finalizarEntrega = async () => {
+    setError('');
+    setExito(false);
+
+    const guardada = await subirTomaPendiente();
+    if (!guardada) return;
+
+    setClienteSeleccionado(null);
+    cliente.limpiar();
+    setPedidos([]);
+    setPedidoActual('');
+    limpiarCaptura();
+    setEntregaActiva(false);
+    setTomasGuardadas(0);
+    setExito(false);
+    setError('');
+  };
+
+  const guardarToma = async () => {
+    setError('');
+    setExito(false);
+
+    if (!archivo) {
+      setError('Sacá una foto o un video');
+      return;
+    }
+
+    const guardada = await subirTomaPendiente();
+    if (guardada) setExito(true);
   };
 
   return (
@@ -302,10 +317,11 @@ export default function CargaForm() {
               </div>
               <button
                 type="button"
+                disabled={subiendo}
                 onClick={finalizarEntrega}
-                className="text-xs text-red-600 font-medium shrink-0"
+                className="text-xs text-red-600 font-medium shrink-0 disabled:opacity-50"
               >
-                Finalizar entrega
+                {subiendo ? `Guardando... ${progreso}%` : 'Finalizar entrega'}
               </button>
             </div>
 
@@ -435,10 +451,11 @@ export default function CargaForm() {
             </button>
             <button
               type="button"
+              disabled={subiendo}
               onClick={finalizarEntrega}
-              className="w-full bg-gray-100 text-gray-700 rounded-lg py-3 font-medium"
+              className="w-full bg-gray-100 text-gray-700 rounded-lg py-3 font-medium disabled:opacity-50"
             >
-              Finalizar entrega
+              {subiendo ? `Guardando... ${progreso}%` : 'Finalizar entrega'}
             </button>
           </div>
         )}
