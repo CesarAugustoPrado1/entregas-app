@@ -9,7 +9,7 @@ export default async function CargarPage() {
   if (!requiereRol(usuario, ['admin', 'operario'])) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <p className="text-gray-600">No tenés permiso para cargar tomas.</p>
+        <p className="text-gray-700">No tenés permiso para cargar tomas.</p>
       </main>
     );
   }

@@ -41,7 +41,8 @@ export async function POST(request) {
       await sql`INSERT INTO toma_pedidos (toma_id, numero_pedido) VALUES (${tomaId}, ${numero})`;
     }
   } catch (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error('Error al guardar la toma:', error.message);
+    return Response.json({ ok: false, error: 'No se pudo guardar la toma' }, { status: 500 });
   }
 
   after(async () => {
@@ -75,6 +76,7 @@ export async function GET(request) {
     const tomas = await listarTomas({ desde, hasta, clienteId, pedido, limit, offset });
     return Response.json({ ok: true, tomas });
   } catch (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error('Error al listar tomas:', error.message);
+    return Response.json({ ok: false, error: 'No se pudieron cargar las tomas' }, { status: 500 });
   }
 }

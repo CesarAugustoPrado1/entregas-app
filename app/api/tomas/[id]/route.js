@@ -25,6 +25,7 @@ export async function DELETE(request, { params }) {
     }
     return Response.json({ ok: true });
   } catch (error) {
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error('Error al eliminar la toma:', error.message);
+    return Response.json({ ok: false, error: 'No se pudo eliminar la toma' }, { status: 500 });
   }
 }

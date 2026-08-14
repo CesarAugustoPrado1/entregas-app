@@ -6,8 +6,12 @@ export async function POST() {
   const token = cookieStore.get('sesion')?.value;
 
   if (token) {
-    const sql = neon(process.env.DATABASE_URL);
-    await sql`DELETE FROM sesiones WHERE token = ${token}`;
+    try {
+      const sql = neon(process.env.DATABASE_URL);
+      await sql`DELETE FROM sesiones WHERE token = ${token}`;
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error.message);
+    }
   }
 
   cookieStore.delete('sesion');

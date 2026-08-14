@@ -11,12 +11,17 @@ export async function GET() {
   }
 
   const sql = neon(process.env.DATABASE_URL);
-  const usuarios = await sql`
-    SELECT id, nombre, email, rol, activo, creado_en
-    FROM usuarios
-    ORDER BY creado_en DESC
-  `;
-  return Response.json({ ok: true, usuarios });
+  try {
+    const usuarios = await sql`
+      SELECT id, nombre, email, rol, activo, creado_en
+      FROM usuarios
+      ORDER BY creado_en DESC
+    `;
+    return Response.json({ ok: true, usuarios });
+  } catch (error) {
+    console.error('Error al listar usuarios:', error.message);
+    return Response.json({ ok: false, error: 'No se pudieron cargar los usuarios' }, { status: 500 });
+  }
 }
 
 export async function POST(request) {
@@ -51,6 +56,7 @@ export async function POST(request) {
     if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
       return Response.json({ ok: false, error: 'Ya existe un usuario con ese email' }, { status: 400 });
     }
-    return Response.json({ ok: false, error: error.message }, { status: 500 });
+    console.error('Error al crear usuario:', error.message);
+    return Response.json({ ok: false, error: 'No se pudo crear el usuario' }, { status: 500 });
   }
 }

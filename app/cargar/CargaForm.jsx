@@ -1,13 +1,46 @@
 'use client';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { upload } from '@vercel/blob/client';
+import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
+
+function ChipsPedidos({ pedidos, onQuitar, className = '' }) {
+  if (pedidos.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap gap-1.5 ${className}`}>
+      {pedidos.map((p) => (
+        <span
+          key={p}
+          className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs rounded-full pl-2.5 pr-1.5 py-1"
+        >
+          {p}
+          <button
+            type="button"
+            onClick={() => onQuitar(p)}
+            className="rounded-full hover:bg-blue-100 w-4 h-4 flex items-center justify-center"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function CargaForm() {
-  const [query, setQuery] = useState('');
-  const [sugerencias, setSugerencias] = useState([]);
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const [errorClientes, setErrorClientes] = useState('');
+  const cliente = useClienteAutocomplete({ onSeleccionar: setClienteSeleccionado });
+  const { setMostrarSugerencias: cerrarSugerenciasCliente } = cliente;
+  const contenedorClienteRef = useRef(null);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (contenedorClienteRef.current && !contenedorClienteRef.current.contains(e.target)) {
+        cerrarSugerenciasCliente(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [cerrarSugerenciasCliente]);
 
   const [pedidoActual, setPedidoActual] = useState('');
   const [pedidos, setPedidos] = useState([]);
@@ -22,64 +55,12 @@ export default function CargaForm() {
   const [observaciones, setObservaciones] = useState('');
 
   const [subiendo, setSubiendo] = useState(false);
+  const [progreso, setProgreso] = useState(0);
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
 
-  const debounceRef = useRef(null);
-  const contenedorRef = useRef(null);
   const fotoInputRef = useRef(null);
   const videoInputRef = useRef(null);
-
-  useEffect(() => {
-    const onClick = (e) => {
-      if (contenedorRef.current && !contenedorRef.current.contains(e.target)) {
-        setMostrarSugerencias(false);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  const buscarClientes = useCallback((texto) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!texto || texto.trim().length < 2) {
-      setSugerencias([]);
-      setMostrarSugerencias(false);
-      return;
-    }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/clientes?q=${encodeURIComponent(texto)}`);
-        const data = await res.json();
-        if (!data.ok) {
-          setErrorClientes(data.error || 'No se pudo buscar clientes');
-          setSugerencias([]);
-          setMostrarSugerencias(false);
-          return;
-        }
-        setErrorClientes('');
-        setSugerencias(data.clientes || []);
-        setMostrarSugerencias(true);
-      } catch (e) {
-        setErrorClientes('No se pudo conectar para buscar clientes');
-        setSugerencias([]);
-        setMostrarSugerencias(false);
-      }
-    }, 300);
-  }, []);
-
-  const handleQueryChange = (e) => {
-    const val = e.target.value;
-    setQuery(val);
-    setClienteSeleccionado(null);
-    buscarClientes(val);
-  };
-
-  const elegirCliente = (c) => {
-    setClienteSeleccionado(c);
-    setQuery(c.nombre);
-    setMostrarSugerencias(false);
-  };
 
   const agregarPedido = () => {
     const val = pedidoActual.trim();
@@ -133,6 +114,7 @@ export default function CargaForm() {
     });
     setFechaHoraCaptura(null);
     setObservaciones('');
+    setProgreso(0);
   };
 
   const iniciarEntrega = () => {
@@ -155,7 +137,7 @@ export default function CargaForm() {
 
   const finalizarEntrega = () => {
     setClienteSeleccionado(null);
-    setQuery('');
+    cliente.limpiar();
     setPedidos([]);
     setPedidoActual('');
     limpiarCaptura();
@@ -183,6 +165,7 @@ export default function CargaForm() {
     setPedidoActual('');
 
     setSubiendo(true);
+    setProgreso(0);
     try {
       const tipo = archivo.type.startsWith('video/') ? 'video' : 'foto';
       const nombreArchivo = `${clienteSeleccionado.nombre}-${Date.now()}`;
@@ -190,6 +173,7 @@ export default function CargaForm() {
       const blob = await upload(`tomas/${Date.now()}-${archivo.name}`, archivo, {
         access: 'public',
         handleUploadUrl: '/api/upload',
+        onUploadProgress: (evento) => setProgreso(Math.round(evento.percentage)),
       });
 
       const res = await fetch('/api/tomas', {
@@ -240,24 +224,24 @@ export default function CargaForm() {
         {!entregaActiva ? (
           <div className="bg-white rounded-xl shadow p-5 mb-4">
             {/* Cliente */}
-            <div ref={contenedorRef} className="relative mb-4">
+            <div ref={contenedorClienteRef} className="relative mb-4">
               <label className="block text-sm font-medium mb-1 text-gray-800">Cliente</label>
               <input
                 type="text"
-                value={query}
-                onChange={handleQueryChange}
-                onFocus={() => sugerencias.length > 0 && setMostrarSugerencias(true)}
+                value={cliente.query}
+                onChange={cliente.handleChange}
+                onFocus={() => cliente.sugerencias.length > 0 && cliente.setMostrarSugerencias(true)}
                 placeholder="Escribí para buscar..."
                 className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400"
               />
-              {mostrarSugerencias && (
+              {cliente.mostrarSugerencias && (
                 <ul className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg overflow-hidden">
-                  {sugerencias.length > 0 ? (
-                    sugerencias.map((c) => (
+                  {cliente.sugerencias.length > 0 ? (
+                    cliente.sugerencias.map((c) => (
                       <li key={c.id}>
                         <button
                           type="button"
-                          onClick={() => elegirCliente(c)}
+                          onClick={() => cliente.elegir(c)}
                           className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
                         >
                           {c.nombre}
@@ -271,7 +255,7 @@ export default function CargaForm() {
                   )}
                 </ul>
               )}
-              {errorClientes && <p className="text-xs text-red-600 mt-1">{errorClientes}</p>}
+              {cliente.errorBusqueda && <p className="text-xs text-red-600 mt-1">{cliente.errorBusqueda}</p>}
               {clienteSeleccionado && (
                 <p className="text-xs text-green-600 mt-1">✓ {clienteSeleccionado.nombre}</p>
               )}
@@ -299,25 +283,7 @@ export default function CargaForm() {
                   Agregar
                 </button>
               </div>
-              {pedidos.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {pedidos.map((p) => (
-                    <span
-                      key={p}
-                      className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs rounded-full pl-2.5 pr-1.5 py-1"
-                    >
-                      {p}
-                      <button
-                        type="button"
-                        onClick={() => quitarPedido(p)}
-                        className="rounded-full hover:bg-blue-100 w-4 h-4 flex items-center justify-center"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <ChipsPedidos pedidos={pedidos} onQuitar={quitarPedido} className="mt-2" />
             </div>
           </div>
         ) : (
@@ -337,25 +303,7 @@ export default function CargaForm() {
             </div>
 
             <p className="text-xs text-gray-700 mb-1">Pedidos</p>
-            {pedidos.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {pedidos.map((p) => (
-                  <span
-                    key={p}
-                    className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs rounded-full pl-2.5 pr-1.5 py-1"
-                  >
-                    {p}
-                    <button
-                      type="button"
-                      onClick={() => quitarPedido(p)}
-                      className="rounded-full hover:bg-blue-100 w-4 h-4 flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <ChipsPedidos pedidos={pedidos} onQuitar={quitarPedido} className="mb-2" />
             <div className="flex gap-2">
               <input
                 type="text"
@@ -433,6 +381,18 @@ export default function CargaForm() {
                   </p>
                 </div>
               )}
+
+              {subiendo && (
+                <div className="mt-3">
+                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${progreso}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-700 mt-1">Subiendo... {progreso}%</p>
+                </div>
+              )}
             </div>
 
             {/* Observaciones */}
@@ -462,7 +422,7 @@ export default function CargaForm() {
               disabled={subiendo || !archivo}
               className="w-full bg-blue-600 text-white rounded-lg py-3 font-medium disabled:opacity-50"
             >
-              {subiendo ? 'Guardando...' : 'Guardar toma y sacar otra'}
+              {subiendo ? `Guardando... ${progreso}%` : 'Guardar toma y sacar otra'}
             </button>
             <button
               type="button"

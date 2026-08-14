@@ -10,7 +10,7 @@ export default async function VisorPage() {
   if (!requiereRol(usuario, ['admin', 'operario', 'auditor'])) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <p className="text-gray-600">No tenés permiso para ver las tomas.</p>
+        <p className="text-gray-700">No tenés permiso para ver las tomas.</p>
       </main>
     );
   }

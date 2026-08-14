@@ -3,10 +3,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 const ROLES = [
-  { valor: 'admin', etiqueta: 'Admin' },
-  { valor: 'operario', etiqueta: 'Logística (operario)' },
-  { valor: 'auditor', etiqueta: 'Observador (auditor)' },
+  { valor: 'admin', etiqueta: 'Admin', color: 'bg-purple-500' },
+  { valor: 'operario', etiqueta: 'Logística (operario)', color: 'bg-blue-500' },
+  { valor: 'auditor', etiqueta: 'Observador (auditor)', color: 'bg-gray-400' },
 ];
+
+const colorDeRol = (rol) => ROLES.find((r) => r.valor === rol)?.color || 'bg-gray-400';
 
 export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
   const [usuarios, setUsuarios] = useState(usuariosIniciales);
@@ -160,6 +162,7 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
                   <p className="text-xs text-gray-600 truncate">{u.email}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <span className={`w-2 h-2 rounded-full ${colorDeRol(u.rol)}`} title={u.rol} />
                   <select
                     value={u.rol}
                     disabled={u.id === usuarioActualId || guardandoId === u.id}

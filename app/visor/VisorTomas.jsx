@@ -1,6 +1,7 @@
 'use client';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
 
 const PAGE_SIZE = 40;
 
@@ -8,10 +9,20 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
 
-  const [clienteQuery, setClienteQuery] = useState('');
-  const [clienteSugerencias, setClienteSugerencias] = useState([]);
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const cliente = useClienteAutocomplete({ onSeleccionar: setClienteSeleccionado });
+  const { setMostrarSugerencias: cerrarSugerenciasCliente } = cliente;
+  const contenedorClienteRef = useRef(null);
+
+  useEffect(() => {
+    const onClick = (e) => {
+      if (contenedorClienteRef.current && !contenedorClienteRef.current.contains(e.target)) {
+        cerrarSugerenciasCliente(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [cerrarSugerenciasCliente]);
 
   const [pedido, setPedido] = useState('');
 
@@ -22,60 +33,12 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
   const [hayMas, setHayMas] = useState(tomasIniciales.length === PAGE_SIZE);
 
   const [tomaAbierta, setTomaAbierta] = useState(null);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [compartiendo, setCompartiendo] = useState(false);
 
   const [seleccionActiva, setSeleccionActiva] = useState(false);
   const [seleccionados, setSeleccionados] = useState(() => new Set());
-
-  const debounceRef = useRef(null);
-  const contenedorRef = useRef(null);
-
-  useEffect(() => {
-    const onClick = (e) => {
-      if (contenedorRef.current && !contenedorRef.current.contains(e.target)) {
-        setMostrarSugerencias(false);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  const buscarClientes = useCallback((texto) => {
-    if (!texto || texto.trim().length < 2) {
-      setClienteSugerencias([]);
-      setMostrarSugerencias(false);
-      return;
-    }
-    fetch(`/api/clientes?q=${encodeURIComponent(texto)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok) {
-          setClienteSugerencias(data.clientes || []);
-          setMostrarSugerencias(true);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleClienteChange = (e) => {
-    const val = e.target.value;
-    setClienteQuery(val);
-    setClienteSeleccionado(null);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => buscarClientes(val), 300);
-  };
-
-  const elegirCliente = (c) => {
-    setClienteSeleccionado(c);
-    setClienteQuery(c.nombre);
-    setMostrarSugerencias(false);
-  };
-
-  const limpiarCliente = () => {
-    setClienteSeleccionado(null);
-    setClienteQuery('');
-  };
 
   const cargarTomas = async (nuevoOffset) => {
     setCargando(true);
@@ -187,6 +150,11 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
     }
   };
 
+  const cerrarModal = () => {
+    setTomaAbierta(null);
+    setConfirmarEliminar(false);
+  };
+
   const eliminarToma = async (id) => {
     setEliminando(true);
     setError('');
@@ -195,9 +163,16 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'No se pudo eliminar');
       setTomas((prev) => prev.filter((t) => t.id !== id));
-      setTomaAbierta(null);
+      setSeleccionados((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      cerrarModal();
     } catch (err) {
       setError(err.message || 'No se pudo eliminar la toma');
+      setConfirmarEliminar(false);
     } finally {
       setEliminando(false);
     }
@@ -246,32 +221,32 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
-          <div ref={contenedorRef} className="relative">
+          <div ref={contenedorClienteRef} className="relative">
             <label className="block text-xs font-medium text-gray-700 mb-1">Cliente</label>
             <input
               type="text"
-              value={clienteQuery}
-              onChange={handleClienteChange}
-              onFocus={() => clienteSugerencias.length > 0 && setMostrarSugerencias(true)}
+              value={cliente.query}
+              onChange={cliente.handleChange}
+              onFocus={() => cliente.sugerencias.length > 0 && cliente.setMostrarSugerencias(true)}
               placeholder="Todos"
               className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
             />
             {clienteSeleccionado && (
               <button
                 type="button"
-                onClick={limpiarCliente}
+                onClick={cliente.limpiar}
                 className="absolute right-2 top-[30px] text-gray-700 text-sm leading-none"
               >
                 ×
               </button>
             )}
-            {mostrarSugerencias && clienteSugerencias.length > 0 && (
+            {cliente.mostrarSugerencias && cliente.sugerencias.length > 0 && (
               <ul className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg overflow-hidden">
-                {clienteSugerencias.map((c) => (
+                {cliente.sugerencias.map((c) => (
                   <li key={c.id}>
                     <button
                       type="button"
-                      onClick={() => elegirCliente(c)}
+                      onClick={() => cliente.elegir(c)}
                       className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
                     >
                       {c.nombre}
@@ -280,6 +255,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 ))}
               </ul>
             )}
+            {cliente.errorBusqueda && <p className="text-xs text-red-600 mt-1">{cliente.errorBusqueda}</p>}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">N° de pedido</label>
@@ -299,7 +275,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               onClick={() => {
                 setDesde('');
                 setHasta('');
-                limpiarCliente();
+                cliente.limpiar();
                 setPedido('');
               }}
               className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
@@ -317,7 +293,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
           </div>
         </div>
 
-        {error && (
+        {error && !tomaAbierta && (
           <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">{error}</div>
         )}
 
@@ -409,7 +385,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
       {tomaAbierta && (
         <div
           className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-20"
-          onClick={() => setTomaAbierta(null)}
+          onClick={cerrarModal}
         >
           <div
             className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
@@ -423,6 +399,9 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               )}
             </div>
             <div className="p-4 space-y-2">
+              {error && (
+                <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 text-center">{error}</div>
+              )}
               <p className="text-sm">
                 <span className="text-gray-700">Cliente:</span> {tomaAbierta.cliente_nombre}
               </p>
@@ -478,25 +457,46 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                   Email
                 </a>
               </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setTomaAbierta(null)}
-                  className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
-                >
-                  Cerrar
-                </button>
-                {esAdmin && (
+
+              {confirmarEliminar ? (
+                <div className="flex gap-2 pt-2">
+                  <p className="flex-1 text-sm text-red-700 flex items-center">¿Eliminar esta toma?</p>
                   <button
                     type="button"
                     disabled={eliminando}
                     onClick={() => eliminarToma(tomaAbierta.id)}
-                    className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
                   >
-                    {eliminando ? 'Eliminando...' : 'Eliminar'}
+                    {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
                   </button>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmarEliminar(false)}
+                    className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={cerrarModal}
+                    className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
+                  >
+                    Cerrar
+                  </button>
+                  {esAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmarEliminar(true)}
+                      className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-medium"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
