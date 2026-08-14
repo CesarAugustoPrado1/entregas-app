@@ -25,6 +25,11 @@ export default async function Home() {
             Ver tomas
           </Link>
           {requiereRol(usuario, ['admin']) && (
+            <Link href="/clientes" className="w-full py-2.5 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium">
+              Clientes
+            </Link>
+          )}
+          {requiereRol(usuario, ['admin']) && (
             <Link href="/usuarios" className="w-full py-2.5 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium">
               Usuarios
             </Link>

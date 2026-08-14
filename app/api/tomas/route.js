@@ -69,11 +69,12 @@ export async function GET(request) {
   const hasta = searchParams.get('hasta');
   const clienteId = Number(searchParams.get('cliente_id'));
   const pedido = Number(searchParams.get('pedido'));
+  const tipo = searchParams.get('tipo');
   const limit = Number(searchParams.get('limit')) || 40;
   const offset = Number(searchParams.get('offset')) || 0;
 
   try {
-    const tomas = await listarTomas({ desde, hasta, clienteId, pedido, limit, offset });
+    const tomas = await listarTomas({ desde, hasta, clienteId, pedido, tipo, limit, offset });
     return Response.json({ ok: true, tomas });
   } catch (error) {
     console.error('Error al listar tomas:', error.message);

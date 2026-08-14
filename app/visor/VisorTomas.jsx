@@ -25,6 +25,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
   }, [cerrarSugerenciasCliente]);
 
   const [pedido, setPedido] = useState('');
+  const [tipo, setTipo] = useState('');
 
   const [tomas, setTomas] = useState(tomasIniciales);
   const [cargando, setCargando] = useState(false);
@@ -49,6 +50,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
       if (hasta) params.set('hasta', `${hasta}T23:59:59`);
       if (clienteSeleccionado) params.set('cliente_id', clienteSeleccionado.id);
       if (pedido.trim()) params.set('pedido', pedido.trim());
+      if (tipo) params.set('tipo', tipo);
       params.set('limit', String(PAGE_SIZE));
       params.set('offset', String(nuevoOffset));
 
@@ -200,7 +202,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl shadow p-4 mb-5 grid gap-3 sm:grid-cols-4">
+        <div className="bg-white rounded-xl shadow p-4 mb-5 grid gap-3 sm:grid-cols-5">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
             <input
@@ -269,7 +271,19 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
               className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
-          <div className="sm:col-span-4 flex gap-2 justify-end">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Tipo</label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Foto y video</option>
+              <option value="foto">Solo foto</option>
+              <option value="video">Solo video</option>
+            </select>
+          </div>
+          <div className="sm:col-span-5 flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => {
@@ -277,6 +291,7 @@ export default function VisorTomas({ esAdmin, tomasIniciales }) {
                 setHasta('');
                 cliente.limpiar();
                 setPedido('');
+                setTipo('');
               }}
               className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
             >
