@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { del } from '@vercel/blob';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { after } from 'next/server';
 import { copiarArchivoADrive } from '@/lib/googleDrive';
@@ -46,12 +47,32 @@ export async function POST(request) {
   }
 
   after(async () => {
+    const sql2 = neon(process.env.DATABASE_URL);
+    let drive;
     try {
-      const driveLink = await copiarArchivoADrive(archivo_url, nombre_archivo, mime_type);
-      const sql2 = neon(process.env.DATABASE_URL);
-      await sql2`UPDATE tomas SET drive_url = ${driveLink} WHERE id = ${tomaId}`;
+      drive = await copiarArchivoADrive(archivo_url, nombre_archivo, mime_type);
     } catch (error) {
       console.error(`No se pudo copiar a Drive la toma ${tomaId}:`, error.message);
+      return;
+    }
+
+    const archivoProxy = `${process.env.APP_URL}/api/drive/${drive.id}`;
+
+    try {
+      await sql2`
+        UPDATE tomas
+        SET archivo_url = ${archivoProxy}, drive_url = ${drive.webViewLink}, drive_file_id = ${drive.id}
+        WHERE id = ${tomaId}
+      `;
+    } catch (error) {
+      console.error(`Toma ${tomaId} copiada a Drive pero no se pudo actualizar la base:`, error.message);
+      return;
+    }
+
+    try {
+      await del(archivo_url);
+    } catch (error) {
+      console.error(`Toma ${tomaId} migrada a Drive pero no se pudo borrar el original de Blob:`, error.message);
     }
   });
 
