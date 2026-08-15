@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Card, Button, Alert } from '@/app/components/ui';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -34,40 +35,37 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-8 max-w-sm w-full">
-        <h1 className="text-xl font-semibold mb-6 text-center text-gray-900">Entregas — Iniciar sesión</h1>
-        {error && (
-          <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4">{error}</div>
-        )}
-        <label className="block text-sm font-medium mb-1 text-gray-800">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full border rounded-lg px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <label className="block text-sm font-medium mb-1 text-gray-800">Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full border rounded-lg px-3 py-2 mb-6 outline-none focus:ring-2 focus:ring-blue-400"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white rounded-lg py-2.5 font-medium disabled:opacity-50"
-        >
-          {loading ? 'Ingresando...' : 'Ingresar'}
-        </button>
+    <main className="min-h-screen flex items-center justify-center p-6 bg-background">
+      <Card className="max-w-sm w-full">
+        <form onSubmit={handleSubmit}>
+          <h1 className="text-2xl font-semibold mb-1 text-center text-foreground tracking-tight">Entregas</h1>
+          <p className="text-sm text-muted text-center mb-6">Iniciá sesión para continuar</p>
+          {error && <Alert>{error}</Alert>}
+          <label className="block text-sm font-medium mb-1 text-gray-800">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full border border-border rounded-lg px-3 py-2 mb-4 outline-none focus:ring-2 focus:ring-primary-400"
+          />
+          <label className="block text-sm font-medium mb-1 text-gray-800">Contraseña</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full border border-border rounded-lg px-3 py-2 mb-6 outline-none focus:ring-2 focus:ring-primary-400"
+          />
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Ingresando...' : 'Ingresar'}
+          </Button>
 
-        <p className="text-xs text-gray-700 text-center mt-4">
-          ¿Olvidaste tu contraseña? Pedile a un administrador que te la resetee desde Usuarios.
-        </p>
-      </form>
+          <p className="text-xs text-muted text-center mt-4">
+            ¿Olvidaste tu contraseña? Pedile a un administrador que te la resetee desde Usuarios.
+          </p>
+        </form>
+      </Card>
     </main>
   );
 }

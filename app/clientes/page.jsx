@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { neon } from '@neondatabase/serverless';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
+import { SinPermiso } from '@/app/components/ui';
 import ClientesAdmin from './ClientesAdmin';
 
 export default async function ClientesPage() {
@@ -8,11 +9,7 @@ export default async function ClientesPage() {
   if (!usuario) redirect('/login');
 
   if (!requiereRol(usuario, ['admin'])) {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <p className="text-gray-700">No tenés permiso para ver esta página.</p>
-      </main>
-    );
+    return <SinPermiso />;
   }
 
   const sql = neon(process.env.DATABASE_URL);

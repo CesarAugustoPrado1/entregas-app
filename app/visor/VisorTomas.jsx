@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
 import { IconoFoto, IconoVideo } from '@/app/components/Iconos';
+import { PageHeader, Card, Button, Alert } from '@/app/components/ui';
 
 const PAGE_SIZE = 40;
 
@@ -182,33 +183,27 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <main className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-semibold text-gray-900">Tomas guardadas</h1>
-          <div className="flex items-center gap-3">
-            {tomas.length > 0 && (
-              <button
-                type="button"
-                onClick={() => (seleccionActiva ? cancelarSeleccion() : setSeleccionActiva(true))}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                {seleccionActiva ? 'Cancelar selección' : 'Seleccionar'}
-              </button>
-            )}
-            {puedeCargar && (
-              <Link href="/cargar" className="text-sm text-blue-600 hover:underline">
-                Cargar toma
-              </Link>
-            )}
-            <Link href="/" className="text-sm text-blue-600 hover:underline">
-              Volver
+        <PageHeader title="Tomas guardadas" backHref="/">
+          {tomas.length > 0 && (
+            <button
+              type="button"
+              onClick={() => (seleccionActiva ? cancelarSeleccion() : setSeleccionActiva(true))}
+              className="text-sm font-medium text-primary-600 hover:text-primary-700"
+            >
+              {seleccionActiva ? 'Cancelar selección' : 'Seleccionar'}
+            </button>
+          )}
+          {puedeCargar && (
+            <Link href="/cargar" className="text-sm font-medium text-primary-600 hover:text-primary-700">
+              Cargar toma
             </Link>
-          </div>
-        </div>
+          )}
+        </PageHeader>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl shadow p-4 mb-5 grid gap-3 sm:grid-cols-5">
+        <Card className="mb-5 grid gap-3 sm:grid-cols-5">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Desde</label>
             <input
@@ -216,7 +211,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               value={desde}
               onChange={(e) => setDesde(e.target.value)}
               onKeyDown={handleFiltroKeyDown}
-              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
           <div>
@@ -226,7 +221,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               value={hasta}
               onChange={(e) => setHasta(e.target.value)}
               onKeyDown={handleFiltroKeyDown}
-              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
           <div ref={contenedorClienteRef} className="relative">
@@ -237,7 +232,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               onChange={cliente.handleChange}
               onFocus={() => cliente.sugerencias.length > 0 && cliente.setMostrarSugerencias(true)}
               placeholder="Todos"
-              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
             {clienteSeleccionado && (
               <button
@@ -249,7 +244,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               </button>
             )}
             {cliente.mostrarSugerencias && cliente.sugerencias.length > 0 && (
-              <ul className="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg overflow-hidden">
+              <ul className="absolute z-10 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden">
                 {cliente.sugerencias.map((c) => (
                   <li key={c.id}>
                     <button
@@ -274,7 +269,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               onChange={(e) => setPedido(e.target.value)}
               onKeyDown={handleFiltroKeyDown}
               placeholder="Ej: 4521"
-              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
           <div>
@@ -282,7 +277,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
-              className="w-full border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             >
               <option value="">Foto y video</option>
               <option value="foto">Solo foto</option>
@@ -290,8 +285,9 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
             </select>
           </div>
           <div className="sm:col-span-5 flex gap-2 justify-end">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 setDesde('');
                 setHasta('');
@@ -299,28 +295,20 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                 setPedido('');
                 setTipo('');
               }}
-              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
             >
               Limpiar filtros
-            </button>
-            <button
-              type="button"
-              onClick={() => cargarTomas(0)}
-              disabled={cargando}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-            >
+            </Button>
+            <Button type="button" onClick={() => cargarTomas(0)} disabled={cargando}>
               Buscar
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
 
-        {error && !tomaAbierta && (
-          <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">{error}</div>
-        )}
+        {error && !tomaAbierta && <Alert>{error}</Alert>}
 
         {/* Grilla */}
         {tomas.length === 0 && !cargando ? (
-          <p className="text-center text-sm text-gray-700 mt-10">No hay tomas para estos filtros.</p>
+          <p className="text-center text-sm text-muted mt-10">No hay tomas para estos filtros.</p>
         ) : (
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
             {tomas.map((t) => {
@@ -330,14 +318,14 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   key={t.id}
                   type="button"
                   onClick={() => (seleccionActiva ? toggleSeleccion(t.id) : setTomaAbierta(t))}
-                  className={`relative bg-white rounded-lg shadow overflow-hidden text-left ${
-                    seleccionada ? 'ring-2 ring-blue-600' : ''
+                  className={`relative bg-surface rounded-xl shadow-sm ring-1 ring-border overflow-hidden text-left ${
+                    seleccionada ? 'ring-2 ring-primary-600' : ''
                   }`}
                 >
                   {seleccionActiva && (
                     <span
                       className={`absolute top-1.5 left-1.5 z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[11px] font-bold ${
-                        seleccionada ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white/90 border-gray-400'
+                        seleccionada ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white/90 border-gray-400'
                       }`}
                     >
                       {seleccionada ? '✓' : ''}
@@ -359,8 +347,8 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   </div>
                   <div className="p-2">
                     <p className="text-xs font-medium truncate text-gray-900">{t.cliente_nombre}</p>
-                    <p className="text-[11px] text-gray-700 truncate">{t.pedidos.join(', ')}</p>
-                    <p className="text-[11px] text-gray-700">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
+                    <p className="text-[11px] text-muted truncate">{t.pedidos.join(', ')}</p>
+                    <p className="text-[11px] text-muted">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
                   </div>
                 </button>
               );
@@ -368,16 +356,13 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
           </div>
         )}
 
-        {cargando && <p className="text-center text-sm text-gray-700 mt-4">Cargando...</p>}
+        {cargando && <p className="text-center text-sm text-muted mt-4">Cargando...</p>}
 
         {hayMas && !cargando && (
           <div className="text-center mt-5">
-            <button
-              onClick={() => cargarTomas(offset + PAGE_SIZE)}
-              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
-            >
+            <Button variant="ghost" onClick={() => cargarTomas(offset + PAGE_SIZE)}>
               Cargar más
-            </button>
+            </Button>
           </div>
         )}
 
@@ -385,26 +370,17 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
       </div>
 
       {seleccionActiva && seleccionados.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-3 flex items-center justify-between gap-3 z-10">
+        <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border shadow-lg p-3 flex items-center justify-between gap-3 z-10">
           <p className="text-sm text-gray-800">
             {seleccionados.size} seleccionada{seleccionados.size !== 1 ? 's' : ''}
           </p>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={compartirSeleccionados}
-              disabled={compartiendo}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-            >
+            <Button onClick={compartirSeleccionados} disabled={compartiendo}>
               {compartiendo ? 'Preparando...' : 'Compartir'}
-            </button>
-            <button
-              type="button"
-              onClick={cancelarSeleccion}
-              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
-            >
+            </Button>
+            <Button variant="ghost" onClick={cancelarSeleccion}>
               Cancelar
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -416,7 +392,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
           onClick={cerrarModal}
         >
           <div
-            className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            className="bg-surface rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-black flex items-center justify-center">
@@ -427,33 +403,31 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               )}
             </div>
             <div className="p-4 space-y-2">
-              {error && (
-                <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 text-center">{error}</div>
-              )}
+              {error && <Alert>{error}</Alert>}
               <p className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
                 {tomaAbierta.tipo === 'video' ? (
-                  <IconoVideo className="w-4 h-4 text-blue-600" />
+                  <IconoVideo className="w-4 h-4 text-primary-600" />
                 ) : (
-                  <IconoFoto className="w-4 h-4 text-blue-600" />
+                  <IconoFoto className="w-4 h-4 text-primary-600" />
                 )}
                 {tomaAbierta.tipo === 'video' ? 'Video' : 'Foto'}
               </p>
               <p className="text-sm">
-                <span className="text-gray-700">Cliente:</span> {tomaAbierta.cliente_nombre}
+                <span className="text-muted">Cliente:</span> {tomaAbierta.cliente_nombre}
               </p>
               <p className="text-sm">
-                <span className="text-gray-700">Pedidos:</span> {tomaAbierta.pedidos.join(', ')}
+                <span className="text-muted">Pedidos:</span> {tomaAbierta.pedidos.join(', ')}
               </p>
               <p className="text-sm">
-                <span className="text-gray-700">Fecha:</span>{' '}
+                <span className="text-muted">Fecha:</span>{' '}
                 {new Date(tomaAbierta.fecha_hora).toLocaleString('es-AR')}
               </p>
               <p className="text-sm">
-                <span className="text-gray-700">Cargado por:</span> {tomaAbierta.usuario_nombre}
+                <span className="text-muted">Cargado por:</span> {tomaAbierta.usuario_nombre}
               </p>
               {tomaAbierta.observaciones && (
                 <p className="text-sm">
-                  <span className="text-gray-700">Observaciones:</span> {tomaAbierta.observaciones}
+                  <span className="text-muted">Observaciones:</span> {tomaAbierta.observaciones}
                 </p>
               )}
               {tomaAbierta.drive_url && (
@@ -461,26 +435,21 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   href={tomaAbierta.drive_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline block"
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700 block"
                 >
                   Abrir en Drive
                 </a>
               )}
 
               <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  disabled={compartiendo}
-                  onClick={() => compartirToma(tomaAbierta)}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                >
+                <Button className="flex-1" disabled={compartiendo} onClick={() => compartirToma(tomaAbierta)}>
                   {compartiendo ? 'Preparando...' : 'Compartir'}
-                </button>
+                </Button>
                 <a
                   href={`https://wa.me/?text=${encodeURIComponent(textoToma(tomaAbierta))}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium text-center"
+                  className="flex-1 py-2.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium text-center"
                 >
                   WhatsApp
                 </a>
@@ -488,7 +457,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   href={`mailto:?subject=${encodeURIComponent(
                     `Toma - ${tomaAbierta.cliente_nombre}`
                   )}&body=${encodeURIComponent(textoToma(tomaAbierta))}`}
-                  className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium text-center"
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium text-center"
                 >
                   Email
                 </a>
@@ -497,39 +466,22 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
               {confirmarEliminar ? (
                 <div className="flex gap-2 pt-2">
                   <p className="flex-1 text-sm text-red-700 flex items-center">¿Eliminar esta toma?</p>
-                  <button
-                    type="button"
-                    disabled={eliminando}
-                    onClick={() => eliminarToma(tomaAbierta.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                  >
+                  <Button variant="danger" disabled={eliminando} onClick={() => eliminarToma(tomaAbierta.id)}>
                     {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmarEliminar(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
-                  >
+                  </Button>
+                  <Button variant="ghost" onClick={() => setConfirmarEliminar(false)}>
                     No
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={cerrarModal}
-                    className="flex-1 py-2 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium"
-                  >
+                  <Button variant="ghost" className="flex-1" onClick={cerrarModal}>
                     Cerrar
-                  </button>
+                  </Button>
                   {esAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmarEliminar(true)}
-                      className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-medium"
-                    >
+                    <Button variant="danger" className="flex-1" onClick={() => setConfirmarEliminar(true)}>
                       Eliminar
-                    </button>
+                    </Button>
                   )}
                 </div>
               )}

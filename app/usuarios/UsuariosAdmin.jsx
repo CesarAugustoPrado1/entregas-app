@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
-import Link from 'next/link';
+import { PageHeader, Card, Button, Alert } from '@/app/components/ui';
 
 const ROLES = [
   { valor: 'admin', etiqueta: 'Admin', color: 'bg-purple-500' },
-  { valor: 'operario', etiqueta: 'Logística (operario)', color: 'bg-blue-500' },
+  { valor: 'operario', etiqueta: 'Logística (operario)', color: 'bg-primary-500' },
   { valor: 'auditor', etiqueta: 'Observador (auditor)', color: 'bg-gray-400' },
 ];
 
@@ -87,79 +87,68 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 sm:p-6">
+    <main className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-xl font-semibold text-gray-900">Usuarios</h1>
-          <Link href="/" className="text-sm text-blue-700 hover:underline">
-            Volver
-          </Link>
-        </div>
+        <PageHeader title="Usuarios" backHref="/" />
 
-        {error && (
-          <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">{error}</div>
-        )}
-        {exito && (
-          <div className="bg-green-50 text-green-700 text-sm rounded-lg px-3 py-2 mb-4 text-center">{exito}</div>
-        )}
+        {error && <Alert>{error}</Alert>}
+        {exito && <Alert tipo="success">{exito}</Alert>}
 
         {/* Crear usuario */}
-        <form onSubmit={crearUsuario} className="bg-white rounded-xl shadow p-4 mb-5">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Crear usuario</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Nombre y apellido"
-              required
-              className="border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-              className="border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Contraseña (mín. 6 caracteres)"
-              required
-              className="border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            <select
-              value={rol}
-              onChange={(e) => setRol(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              {ROLES.map((r) => (
-                <option key={r.valor} value={r.valor}>
-                  {r.etiqueta}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="submit"
-            disabled={creando}
-            className="w-full sm:w-auto mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-          >
-            {creando ? 'Creando...' : 'Crear usuario'}
-          </button>
-        </form>
+        <Card className="mb-5">
+          <form onSubmit={crearUsuario}>
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Crear usuario</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Nombre y apellido"
+                required
+                className="border border-border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-400"
+              />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                required
+                className="border border-border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-400"
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Contraseña (mín. 6 caracteres)"
+                required
+                className="border border-border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-400"
+              />
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="border border-border rounded-lg px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-400"
+              >
+                {ROLES.map((r) => (
+                  <option key={r.valor} value={r.valor}>
+                    {r.etiqueta}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button type="submit" disabled={creando} className="w-full sm:w-auto mt-3">
+              {creando ? 'Creando...' : 'Crear usuario'}
+            </Button>
+          </form>
+        </Card>
 
         {/* Lista */}
-        <div className="bg-white rounded-xl shadow divide-y">
+        <Card padding="" className="divide-y divide-border">
           {usuarios.map((u) => (
             <div key={u.id} className="p-4">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{u.nombre}</p>
-                  <p className="text-xs text-gray-600 truncate">{u.email}</p>
+                  <p className="text-xs text-muted truncate">{u.email}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={`w-2 h-2 rounded-full ${colorDeRol(u.rol)}`} title={u.rol} />
@@ -167,7 +156,7 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
                     value={u.rol}
                     disabled={u.id === usuarioActualId || guardandoId === u.id}
                     onChange={(e) => actualizarUsuario(u.id, { rol: e.target.value })}
-                    className="border rounded-lg px-2 py-1 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
+                    className="border border-border rounded-lg px-2 py-1 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-primary-400 disabled:opacity-50"
                   >
                     {ROLES.map((r) => (
                       <option key={r.valor} value={r.valor}>
@@ -195,13 +184,13 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
                     value={nuevaPassword}
                     onChange={(e) => setNuevaPassword(e.target.value)}
                     placeholder="Nueva contraseña"
-                    className="flex-1 border rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 border border-border rounded-lg px-3 py-1.5 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-primary-400"
                   />
                   <button
                     type="button"
                     disabled={guardandoId === u.id}
                     onClick={() => guardarNuevaPassword(u.id)}
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
+                    className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium disabled:opacity-50"
                   >
                     Guardar
                   </button>
@@ -223,14 +212,14 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
                     setResetId(u.id);
                     setNuevaPassword('');
                   }}
-                  className="text-xs text-blue-700 hover:underline mt-2"
+                  className="text-xs font-medium text-primary-700 hover:text-primary-800 mt-2"
                 >
                   Resetear contraseña
                 </button>
               )}
             </div>
           ))}
-        </div>
+        </Card>
       </div>
     </main>
   );

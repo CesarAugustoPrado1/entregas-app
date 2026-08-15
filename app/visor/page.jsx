@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { listarTomas } from '@/lib/tomas';
+import { SinPermiso } from '@/app/components/ui';
 import VisorTomas from './VisorTomas';
 
 export default async function VisorPage() {
@@ -8,11 +9,7 @@ export default async function VisorPage() {
   if (!usuario) redirect('/login');
 
   if (!requiereRol(usuario, ['admin', 'operario', 'auditor'])) {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-gray-50">
-        <p className="text-gray-700">No tenés permiso para ver las tomas.</p>
-      </main>
-    );
+    return <SinPermiso mensaje="No tenés permiso para ver las tomas." />;
   }
 
   const tomasIniciales = await listarTomas({ limit: 40, offset: 0 });

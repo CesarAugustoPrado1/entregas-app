@@ -11,7 +11,7 @@ export default function CerrarSesionBoton() {
   };
 
   return (
-    <button onClick={cerrarSesion} className="text-sm text-red-600 hover:underline">
+    <button onClick={cerrarSesion} className="text-sm font-medium text-red-600 hover:text-red-700">
       Cerrar sesión
     </button>
   );
