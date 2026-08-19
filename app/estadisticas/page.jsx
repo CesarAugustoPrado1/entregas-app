@@ -66,7 +66,7 @@ export default async function EstadisticasPage() {
   const usuario = await getUsuarioActual();
   if (!usuario) redirect('/login');
 
-  if (!requiereRol(usuario, ['admin', 'auditor'])) {
+  if (!requiereRol(usuario, ['admin', 'operario', 'auditor'])) {
     return <SinPermiso mensaje="No tenés permiso para ver las estadísticas." />;
   }
 

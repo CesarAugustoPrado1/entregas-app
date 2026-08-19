@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useClienteAutocomplete } from '@/lib/useClienteAutocomplete';
-import { IconoFoto, IconoVideo } from '@/app/components/Iconos';
+import { IconoFoto, IconoVideo, IconoChevronIzq, IconoChevronDer } from '@/app/components/Iconos';
 import { PageHeader, Card, Button, Alert } from '@/app/components/ui';
 
 const PAGE_SIZE = 40;
@@ -63,8 +63,10 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
       setTomas((prev) => (nuevoOffset === 0 ? data.tomas : [...prev, ...data.tomas]));
       setHayMas(data.tomas.length === PAGE_SIZE);
       setOffset(nuevoOffset);
+      return data.tomas;
     } catch (err) {
       setError(err.message || 'No se pudieron cargar las tomas');
+      return [];
     } finally {
       setCargando(false);
     }
@@ -157,6 +159,33 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
   const cerrarModal = () => {
     setTomaAbierta(null);
     setConfirmarEliminar(false);
+  };
+
+  const indiceTomaAbierta = tomaAbierta ? tomas.findIndex((t) => t.id === tomaAbierta.id) : -1;
+  const hayAnterior = indiceTomaAbierta > 0;
+  const haySiguiente = indiceTomaAbierta >= 0 && (indiceTomaAbierta < tomas.length - 1 || hayMas);
+
+  const abrirTomaPorIndice = (indice) => {
+    if (indice < 0 || indice >= tomas.length) return;
+    setTomaAbierta(tomas[indice]);
+    setConfirmarEliminar(false);
+    setError('');
+  };
+
+  const irAAnterior = () => abrirTomaPorIndice(indiceTomaAbierta - 1);
+
+  const irASiguiente = async () => {
+    if (indiceTomaAbierta < tomas.length - 1) {
+      abrirTomaPorIndice(indiceTomaAbierta + 1);
+      return;
+    }
+    if (!hayMas || cargando) return;
+    const nuevas = await cargarTomas(offset + PAGE_SIZE);
+    if (nuevas.length > 0) {
+      setTomaAbierta(nuevas[0]);
+      setConfirmarEliminar(false);
+      setError('');
+    }
   };
 
   const eliminarToma = async (id) => {
@@ -395,11 +424,32 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
             className="bg-surface rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-black flex items-center justify-center">
+            <div className="bg-black flex items-center justify-center relative">
               {tomaAbierta.tipo === 'video' ? (
                 <video src={tomaAbierta.archivo_url} controls className="max-h-[60vh] w-full" />
               ) : (
                 <img src={tomaAbierta.archivo_url} alt="" className="max-h-[60vh] w-full object-contain" />
+              )}
+              {hayAnterior && (
+                <button
+                  type="button"
+                  onClick={irAAnterior}
+                  aria-label="Toma anterior"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5"
+                >
+                  <IconoChevronIzq className="w-5 h-5" />
+                </button>
+              )}
+              {haySiguiente && (
+                <button
+                  type="button"
+                  disabled={cargando}
+                  onClick={irASiguiente}
+                  aria-label="Toma siguiente"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 disabled:opacity-50"
+                >
+                  <IconoChevronDer className="w-5 h-5" />
+                </button>
               )}
             </div>
             <div className="p-4 space-y-2">

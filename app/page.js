@@ -7,7 +7,7 @@ import CerrarSesionBoton from './CerrarSesionBoton';
 const ACCIONES = [
   { href: '/cargar', label: 'Cargar toma', roles: ['admin', 'operario'], variant: 'primary' },
   { href: '/visor', label: 'Ver tomas', roles: ['admin', 'operario', 'auditor'], variant: 'secondary' },
-  { href: '/estadisticas', label: 'Datos y estadísticas', roles: ['admin', 'auditor'], variant: 'secondary' },
+  { href: '/estadisticas', label: 'Datos y estadísticas', roles: ['admin', 'operario', 'auditor'], variant: 'secondary' },
   { href: '/clientes', label: 'Clientes', roles: ['admin'], variant: 'secondary' },
   { href: '/usuarios', label: 'Usuarios', roles: ['admin'], variant: 'secondary' },
 ];
