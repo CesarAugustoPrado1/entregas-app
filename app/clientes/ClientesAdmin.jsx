@@ -8,6 +8,7 @@ export default function ClientesAdmin({ clientesIniciales }) {
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
+  const [guardandoId, setGuardandoId] = useState(null);
 
   const crearCliente = async (e) => {
     e.preventDefault();
@@ -33,10 +34,55 @@ export default function ClientesAdmin({ clientesIniciales }) {
     }
   };
 
+  const actualizarCliente = async (id, cambios) => {
+    setError('');
+    setExito('');
+    setGuardandoId(id);
+    try {
+      const res = await fetch(`/api/clientes/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cambios),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'No se pudo actualizar');
+
+      setClientes((lista) => lista.map((c) => (c.id === id ? data.cliente : c)));
+    } catch (err) {
+      setError(err.message || 'No se pudo actualizar el cliente');
+    } finally {
+      setGuardandoId(null);
+    }
+  };
+
+  const exportarClientes = () => {
+    const encabezado = ['id', 'nombre', 'estado', 'creado_en'];
+    const filas = clientes.map((c) => [
+      c.id,
+      `"${c.nombre.replace(/"/g, '""')}"`,
+      c.activo ? 'activo' : 'inactivo',
+      new Date(c.creado_en).toISOString(),
+    ]);
+    const csv = [encabezado, ...filas].map((fila) => fila.join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-2xl mx-auto">
-        <PageHeader title="Clientes" backHref="/" />
+        <PageHeader title="Clientes" backHref="/">
+          <Button type="button" variant="ghost" onClick={exportarClientes} className="shrink-0">
+            Exportar
+          </Button>
+        </PageHeader>
 
         {error && <Alert>{error}</Alert>}
         {exito && <Alert tipo="success">{exito}</Alert>}
@@ -62,8 +108,20 @@ export default function ClientesAdmin({ clientesIniciales }) {
             <p className="text-sm text-muted p-4 text-center">Todavía no hay clientes cargados.</p>
           ) : (
             clientes.map((c) => (
-              <div key={c.id} className="p-3 text-sm font-medium text-gray-900">
-                {c.nombre}
+              <div key={c.id} className="p-3 flex items-center justify-between gap-2">
+                <span className={`text-sm font-medium ${c.activo ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {c.nombre}
+                </span>
+                <button
+                  type="button"
+                  disabled={guardandoId === c.id}
+                  onClick={() => actualizarCliente(c.id, { activo: !c.activo })}
+                  className={`px-2 py-1 rounded-lg text-xs font-medium disabled:opacity-50 shrink-0 ${
+                    c.activo ? 'bg-gray-100 text-gray-700' : 'bg-red-50 text-red-700'
+                  }`}
+                >
+                  {c.activo ? 'Activo' : 'Desactivado'}
+                </button>
               </div>
             ))
           )}

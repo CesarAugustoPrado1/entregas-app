@@ -189,6 +189,16 @@ export default function CargaForm() {
     }
   };
 
+  // Si ya hay una toma capturada sin guardar, la guarda antes de abrir la cámara de nuevo
+  // para que sacar otra foto/video directamente no la pise y la pierda.
+  const iniciarCaptura = async (inputRef) => {
+    if (archivo) {
+      const guardada = await encolarTomaPendiente();
+      if (!guardada) return;
+    }
+    inputRef.current?.click();
+  };
+
   const finalizarEntrega = async () => {
     setError('');
     setExito(false);
@@ -354,16 +364,18 @@ export default function CargaForm() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => fotoInputRef.current?.click()}
-                  className="flex flex-col items-center gap-1.5 border-2 border-dashed border-border rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-primary-50 hover:border-primary-400 transition-colors"
+                  disabled={guardando}
+                  onClick={() => iniciarCaptura(fotoInputRef)}
+                  className="flex flex-col items-center gap-1.5 border-2 border-dashed border-border rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-primary-50 hover:border-primary-400 transition-colors disabled:opacity-50"
                 >
                   <IconoFoto className="w-7 h-7 text-primary-600" />
                   Sacar foto
                 </button>
                 <button
                   type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  className="flex flex-col items-center gap-1.5 border-2 border-dashed border-border rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-primary-50 hover:border-primary-400 transition-colors"
+                  disabled={guardando}
+                  onClick={() => iniciarCaptura(videoInputRef)}
+                  className="flex flex-col items-center gap-1.5 border-2 border-dashed border-border rounded-lg py-4 text-sm text-gray-700 font-medium hover:bg-primary-50 hover:border-primary-400 transition-colors disabled:opacity-50"
                 >
                   <IconoVideo className="w-7 h-7 text-primary-600" />
                   Grabar video

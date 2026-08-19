@@ -13,7 +13,7 @@ export default async function ClientesPage() {
   }
 
   const sql = neon(process.env.DATABASE_URL);
-  const clientes = await sql`SELECT id, nombre, creado_en FROM clientes ORDER BY nombre`;
+  const clientes = await sql`SELECT id, nombre, activo, creado_en FROM clientes ORDER BY nombre`;
 
   return <ClientesAdmin clientesIniciales={clientes} />;
 }

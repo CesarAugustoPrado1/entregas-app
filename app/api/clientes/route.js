@@ -14,7 +14,7 @@ export async function GET(request) {
   try {
     const clientes = await sql`
       SELECT id, nombre FROM clientes
-      WHERE nombre ILIKE ${'%' + q + '%'}
+      WHERE nombre ILIKE ${'%' + q + '%'} AND activo = true
       ORDER BY nombre
       LIMIT 8
     `;
