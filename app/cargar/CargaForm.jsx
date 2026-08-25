@@ -30,11 +30,41 @@ function ChipsPedidos({ pedidos, onQuitar, className = '' }) {
   );
 }
 
+function ChipsClientes({ clientes, onQuitar, className = '' }) {
+  if (clientes.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap gap-1.5 ${className}`}>
+      {clientes.map((c) => (
+        <span
+          key={c.id}
+          className="flex items-center gap-1 bg-primary-50 text-primary-700 text-xs rounded-full pl-2.5 pr-1.5 py-1"
+        >
+          {c.nombre}
+          <button
+            type="button"
+            onClick={() => onQuitar(c.id)}
+            className="rounded-full hover:bg-primary-100 w-4 h-4 flex items-center justify-center"
+          >
+            ×
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function CargaForm() {
   const { encolar } = useCola();
 
-  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const cliente = useClienteAutocomplete({ onSeleccionar: setClienteSeleccionado });
+  const [clientesSeleccionados, setClientesSeleccionados] = useState([]);
+  const agregarCliente = (c) => {
+    if (!c) return;
+    setClientesSeleccionados((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c]));
+  };
+  const quitarCliente = (id) => {
+    setClientesSeleccionados((prev) => prev.filter((c) => c.id !== id));
+  };
+  const cliente = useClienteAutocomplete({ onSeleccionar: agregarCliente, limpiarQueryAlElegir: true });
   const { setMostrarSugerencias: cerrarSugerenciasCliente } = cliente;
   const contenedorClienteRef = useRef(null);
 
@@ -132,8 +162,8 @@ export default function CargaForm() {
 
   const iniciarEntrega = () => {
     setError('');
-    if (!clienteSeleccionado) {
-      setError('Elegí un cliente de la lista');
+    if (clientesSeleccionados.length === 0) {
+      setError('Elegí al menos un cliente de la lista');
       return;
     }
     const pedidosFinal = pedidosConPendiente();
@@ -163,7 +193,7 @@ export default function CargaForm() {
     setGuardando(true);
     try {
       const tipo = archivo.type.startsWith('video/') ? 'video' : 'foto';
-      const nombreArchivo = `${clienteSeleccionado.nombre}-${Date.now()}`;
+      const nombreArchivo = `${clientesSeleccionados.map((c) => c.nombre).join('+')}-${Date.now()}`;
 
       await encolar({
         archivo,
@@ -171,8 +201,8 @@ export default function CargaForm() {
         mimeType: archivo.type,
         nombreArchivo,
         nombreOriginal: archivo.name,
-        clienteId: clienteSeleccionado.id,
-        clienteNombre: clienteSeleccionado.nombre,
+        clienteIds: clientesSeleccionados.map((c) => c.id),
+        clienteNombres: clientesSeleccionados.map((c) => c.nombre),
         pedidos: pedidosFinal,
         observaciones,
         fechaHora: fechaHoraCaptura.toISOString(),
@@ -213,7 +243,7 @@ export default function CargaForm() {
     const guardada = await encolarTomaPendiente();
     if (!guardada) return;
 
-    setClienteSeleccionado(null);
+    setClientesSeleccionados([]);
     cliente.limpiar();
     setPedidos([]);
     setPedidoActual('');
@@ -249,13 +279,13 @@ export default function CargaForm() {
           <Card className="mb-4">
             {/* Cliente */}
             <div ref={contenedorClienteRef} className="relative mb-4">
-              <label className="block text-sm font-medium mb-1 text-gray-800">Cliente</label>
+              <label className="block text-sm font-medium mb-1 text-gray-800">Clientes</label>
               <input
                 type="text"
                 value={cliente.query}
                 onChange={cliente.handleChange}
                 onFocus={() => cliente.sugerencias.length > 0 && cliente.setMostrarSugerencias(true)}
-                placeholder="Escribí para buscar..."
+                placeholder="Escribí para buscar y agregar..."
                 className="w-full border border-border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-primary-400"
               />
               {cliente.mostrarSugerencias && (
@@ -280,9 +310,7 @@ export default function CargaForm() {
                 </ul>
               )}
               {cliente.errorBusqueda && <p className="text-xs text-red-600 mt-1">{cliente.errorBusqueda}</p>}
-              {clienteSeleccionado && (
-                <p className="text-xs text-green-600 mt-1">✓ {clienteSeleccionado.nombre}</p>
-              )}
+              <ChipsClientes clientes={clientesSeleccionados} onQuitar={quitarCliente} className="mt-2" />
             </div>
 
             {/* Pedidos */}
@@ -310,8 +338,10 @@ export default function CargaForm() {
           <Card className="mb-4" padding="p-4">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-xs text-muted">Cliente</p>
-                <p className="text-sm font-medium text-gray-900">{clienteSeleccionado.nombre}</p>
+                <p className="text-xs text-muted">Cliente{clientesSeleccionados.length !== 1 ? 's' : ''}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {clientesSeleccionados.map((c) => c.nombre).join(', ')}
+                </p>
               </div>
               <button
                 type="button"

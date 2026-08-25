@@ -13,14 +13,26 @@ export async function POST(request) {
     return Response.json({ ok: false, error: 'No autorizado' }, { status: 401 });
   }
 
-  const { cliente_id, pedidos, archivo_url, tipo, observaciones, fecha_hora, nombre_archivo, mime_type } =
+  const { cliente_ids, pedidos, archivo_url, tipo, observaciones, fecha_hora, nombre_archivo, mime_type } =
     await request.json();
 
-  if (!cliente_id || !archivo_url || !tipo || !fecha_hora || !Array.isArray(pedidos) || pedidos.length === 0) {
+  if (
+    !Array.isArray(cliente_ids) ||
+    cliente_ids.length === 0 ||
+    !archivo_url ||
+    !tipo ||
+    !fecha_hora ||
+    !Array.isArray(pedidos) ||
+    pedidos.length === 0
+  ) {
     return Response.json({ ok: false, error: 'Faltan datos obligatorios' }, { status: 400 });
   }
   if (!['foto', 'video'].includes(tipo)) {
     return Response.json({ ok: false, error: 'Tipo inválido' }, { status: 400 });
+  }
+  const clienteIdsNumeros = cliente_ids.map(Number);
+  if (clienteIdsNumeros.some((n) => !Number.isInteger(n) || n <= 0)) {
+    return Response.json({ ok: false, error: 'Clientes inválidos' }, { status: 400 });
   }
   const pedidosNumeros = pedidos.map(Number);
   if (pedidosNumeros.some((n) => !Number.isInteger(n) || n <= 0)) {
@@ -33,13 +45,16 @@ export async function POST(request) {
   try {
     const [toma] = await sql`
       INSERT INTO tomas (fecha_hora, cliente_id, archivo_url, tipo, observaciones, usuario_id)
-      VALUES (${fecha_hora}, ${cliente_id}, ${archivo_url}, ${tipo}, ${observaciones || null}, ${usuario.id})
+      VALUES (${fecha_hora}, ${clienteIdsNumeros[0]}, ${archivo_url}, ${tipo}, ${observaciones || null}, ${usuario.id})
       RETURNING id
     `;
     tomaId = toma.id;
 
     for (const numero of pedidosNumeros) {
       await sql`INSERT INTO toma_pedidos (toma_id, numero_pedido) VALUES (${tomaId}, ${numero})`;
+    }
+    for (const clienteId of new Set(clienteIdsNumeros)) {
+      await sql`INSERT INTO toma_clientes (toma_id, cliente_id) VALUES (${tomaId}, ${clienteId})`;
     }
   } catch (error) {
     console.error('Error al guardar la toma:', error.message);

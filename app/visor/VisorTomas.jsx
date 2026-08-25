@@ -79,8 +79,10 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
     }
   };
 
+  const nombresClientes = (t) => t.clientes.map((c) => c.nombre).join(', ');
+
   const textoToma = (t) =>
-    `Cliente: ${t.cliente_nombre}\nPedidos: ${t.pedidos.join(', ')}\nFecha: ${new Date(t.fecha_hora).toLocaleString('es-AR')}\n${t.archivo_url}`;
+    `Cliente${t.clientes.length !== 1 ? 's' : ''}: ${nombresClientes(t)}\nPedidos: ${t.pedidos.join(', ')}\nFecha: ${new Date(t.fecha_hora).toLocaleString('es-AR')}\n${t.archivo_url}`;
 
   const archivoDeToma = async (t) => {
     const res = await fetch(t.archivo_url);
@@ -96,12 +98,12 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
       if (navigator.canShare) {
         const archivo = await archivoDeToma(t);
         if (navigator.canShare({ files: [archivo] })) {
-          await navigator.share({ files: [archivo], title: `Toma - ${t.cliente_nombre}`, text: textoToma(t) });
+          await navigator.share({ files: [archivo], title: `Toma - ${nombresClientes(t)}`, text: textoToma(t) });
           return;
         }
       }
       if (navigator.share) {
-        await navigator.share({ title: `Toma - ${t.cliente_nombre}`, text: textoToma(t) });
+        await navigator.share({ title: `Toma - ${nombresClientes(t)}`, text: textoToma(t) });
       } else {
         setError('Tu navegador no soporta compartir directo. Usá los botones de WhatsApp o email.');
       }
@@ -375,7 +377,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                     )}
                   </div>
                   <div className="p-2">
-                    <p className="text-xs font-medium truncate text-gray-900">{t.cliente_nombre}</p>
+                    <p className="text-xs font-medium truncate text-gray-900">{nombresClientes(t)}</p>
                     <p className="text-[11px] text-muted truncate">{t.pedidos.join(', ')}</p>
                     <p className="text-[11px] text-muted">{new Date(t.fecha_hora).toLocaleString('es-AR')}</p>
                   </div>
@@ -463,7 +465,8 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                 {tomaAbierta.tipo === 'video' ? 'Video' : 'Foto'}
               </p>
               <p className="text-sm">
-                <span className="text-muted">Cliente:</span> {tomaAbierta.cliente_nombre}
+                <span className="text-muted">Cliente{tomaAbierta.clientes.length !== 1 ? 's' : ''}:</span>{' '}
+                {nombresClientes(tomaAbierta)}
               </p>
               <p className="text-sm">
                 <span className="text-muted">Pedidos:</span> {tomaAbierta.pedidos.join(', ')}
@@ -505,7 +508,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                 </a>
                 <a
                   href={`mailto:?subject=${encodeURIComponent(
-                    `Toma - ${tomaAbierta.cliente_nombre}`
+                    `Toma - ${nombresClientes(tomaAbierta)}`
                   )}&body=${encodeURIComponent(textoToma(tomaAbierta))}`}
                   className="flex-1 py-2.5 bg-gray-100 text-gray-800 rounded-lg text-sm font-medium text-center"
                 >
