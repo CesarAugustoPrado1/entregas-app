@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { PageHeader, Card, Button, Alert } from '@/app/components/ui';
+import { patchJSON } from '@/lib/api';
 
 const ROLES = [
   { valor: 'admin', etiqueta: 'Admin', color: 'bg-purple-500' },
@@ -57,14 +58,7 @@ export default function UsuariosAdmin({ usuariosIniciales, usuarioActualId }) {
     setExito('');
     setGuardandoId(id);
     try {
-      const res = await fetch(`/api/usuarios/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cambios),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'No se pudo actualizar');
-
+      const data = await patchJSON(`/api/usuarios/${id}`, cambios);
       setUsuarios((lista) => lista.map((u) => (u.id === id ? data.usuario : u)));
       if (cambios.password !== undefined) {
         setExito('Contraseña actualizada.');

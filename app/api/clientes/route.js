@@ -9,15 +9,23 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q') || '';
+  const incluirInactivos = searchParams.get('incluir_inactivos') === '1';
 
   const sql = neon(process.env.DATABASE_URL);
   try {
-    const clientes = await sql`
-      SELECT id, nombre FROM clientes
-      WHERE nombre ILIKE ${'%' + q + '%'} AND activo = true
-      ORDER BY nombre
-      LIMIT 8
-    `;
+    const clientes = incluirInactivos
+      ? await sql`
+          SELECT id, nombre, activo FROM clientes
+          WHERE nombre ILIKE ${'%' + q + '%'}
+          ORDER BY nombre
+          LIMIT 8
+        `
+      : await sql`
+          SELECT id, nombre FROM clientes
+          WHERE nombre ILIKE ${'%' + q + '%'} AND activo = true
+          ORDER BY nombre
+          LIMIT 8
+        `;
     return Response.json({ ok: true, clientes });
   } catch (error) {
     console.error('Error al buscar clientes:', error.message);
@@ -40,7 +48,7 @@ export async function POST(request) {
   try {
     const [nuevo] = await sql`
       INSERT INTO clientes (nombre) VALUES (${nombre.trim()})
-      RETURNING id, nombre, creado_en
+      RETURNING id, nombre, activo, creado_en
     `;
     return Response.json({ ok: true, cliente: nuevo });
   } catch (error) {

@@ -191,12 +191,19 @@ export default function CargaForm() {
 
   // Si ya hay una toma capturada sin guardar, la guarda antes de abrir la cámara de nuevo
   // para que sacar otra foto/video directamente no la pise y la pierda.
+  const capturandoRef = useRef(false);
   const iniciarCaptura = async (inputRef) => {
-    if (archivo) {
-      const guardada = await encolarTomaPendiente();
-      if (!guardada) return;
+    if (capturandoRef.current) return;
+    capturandoRef.current = true;
+    try {
+      if (archivo) {
+        const guardada = await encolarTomaPendiente();
+        if (!guardada) return;
+      }
+      inputRef.current?.click();
+    } finally {
+      capturandoRef.current = false;
     }
-    inputRef.current?.click();
   };
 
   const finalizarEntrega = async () => {

@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { PageHeader, Card, Button, Alert } from '@/app/components/ui';
+import { patchJSON } from '@/lib/api';
+import { descargarCsv, celdaCsv } from '@/lib/exportarCsv';
 
 export default function ClientesAdmin({ clientesIniciales }) {
   const [clientes, setClientes] = useState(clientesIniciales);
@@ -39,14 +41,7 @@ export default function ClientesAdmin({ clientesIniciales }) {
     setExito('');
     setGuardandoId(id);
     try {
-      const res = await fetch(`/api/clientes/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cambios),
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'No se pudo actualizar');
-
+      const data = await patchJSON(`/api/clientes/${id}`, cambios);
       setClientes((lista) => lista.map((c) => (c.id === id ? data.cliente : c)));
     } catch (err) {
       setError(err.message || 'No se pudo actualizar el cliente');
@@ -59,20 +54,11 @@ export default function ClientesAdmin({ clientesIniciales }) {
     const encabezado = ['id', 'nombre', 'estado', 'creado_en'];
     const filas = clientes.map((c) => [
       c.id,
-      `"${c.nombre.replace(/"/g, '""')}"`,
+      celdaCsv(c.nombre),
       c.activo ? 'activo' : 'inactivo',
       new Date(c.creado_en).toISOString(),
     ]);
-    const csv = [encabezado, ...filas].map((fila) => fila.join(',')).join('\r\n');
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `clientes-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    descargarCsv(`clientes-${new Date().toISOString().slice(0, 10)}.csv`, encabezado, filas);
   };
 
   return (

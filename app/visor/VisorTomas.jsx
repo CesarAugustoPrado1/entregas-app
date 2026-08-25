@@ -12,7 +12,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
   const [hasta, setHasta] = useState('');
 
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const cliente = useClienteAutocomplete({ onSeleccionar: setClienteSeleccionado });
+  const cliente = useClienteAutocomplete({ onSeleccionar: setClienteSeleccionado, incluirInactivos: true });
   const { setMostrarSugerencias: cerrarSugerenciasCliente } = cliente;
   const contenedorClienteRef = useRef(null);
 
@@ -165,11 +165,15 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
   const hayAnterior = indiceTomaAbierta > 0;
   const haySiguiente = indiceTomaAbierta >= 0 && (indiceTomaAbierta < tomas.length - 1 || hayMas);
 
-  const abrirTomaPorIndice = (indice) => {
-    if (indice < 0 || indice >= tomas.length) return;
-    setTomaAbierta(tomas[indice]);
+  const abrirToma = (t) => {
+    setTomaAbierta(t);
     setConfirmarEliminar(false);
     setError('');
+  };
+
+  const abrirTomaPorIndice = (indice) => {
+    if (indice < 0 || indice >= tomas.length) return;
+    abrirToma(tomas[indice]);
   };
 
   const irAAnterior = () => abrirTomaPorIndice(indiceTomaAbierta - 1);
@@ -181,11 +185,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
     }
     if (!hayMas || cargando) return;
     const nuevas = await cargarTomas(offset + PAGE_SIZE);
-    if (nuevas.length > 0) {
-      setTomaAbierta(nuevas[0]);
-      setConfirmarEliminar(false);
-      setError('');
-    }
+    if (nuevas.length > 0) abrirToma(nuevas[0]);
   };
 
   const eliminarToma = async (id) => {
@@ -346,7 +346,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => (seleccionActiva ? toggleSeleccion(t.id) : setTomaAbierta(t))}
+                  onClick={() => (seleccionActiva ? toggleSeleccion(t.id) : abrirToma(t))}
                   className={`relative bg-surface rounded-xl shadow-sm ring-1 ring-border overflow-hidden text-left ${
                     seleccionada ? 'ring-2 ring-primary-600' : ''
                   }`}
@@ -480,7 +480,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   <span className="text-muted">Observaciones:</span> {tomaAbierta.observaciones}
                 </p>
               )}
-              {tomaAbierta.drive_url && (
+              {esAdmin && tomaAbierta.drive_url && (
                 <a
                   href={tomaAbierta.drive_url}
                   target="_blank"
