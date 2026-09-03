@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# entregas-app
 
-## Getting Started
+Registro fotográfico de entregas. Un operario saca una foto o un video con el
+celular en el momento de la entrega, lo asocia a uno o varios clientes y a los
+números de pedido correspondientes, y queda archivado y consultable.
 
-First, run the development server:
+Pensada para usarse desde el celular en la calle, con conexión mala o
+intermitente: las capturas se encolan localmente y se suben solas cuando hay red.
+
+## Stack
+
+- **Next.js 16** (App Router) + React 19, JavaScript sin TypeScript
+- **Tailwind CSS v4**
+- **Neon** (Postgres serverless) para los datos
+- **Vercel Blob** como destino inicial de la subida
+- **Google Drive** como almacenamiento definitivo de los archivos
+- Deploy en **Vercel**
+
+## Cómo se guarda un archivo
+
+El recorrido de una toma explica varias decisiones del código:
+
+1. El navegador sube el archivo **directo a Vercel Blob**, sin pasar por el
+   servidor (`/api/upload` sólo firma el token). Así no hay límite de tamaño de
+   request ni timeout de función.
+2. `POST /api/tomas` guarda la toma en Postgres, apuntando todavía al Blob.
+3. Ya respondido el request, en un `after()`, el archivo se **copia a Drive** y
+   se borra del Blob. Blob es caro como almacenamiento permanente; Drive no.
+4. `archivo_url` pasa a apuntar a `/api/drive/[fileId]`, un proxy que baja el
+   archivo de Drive con las credenciales del servidor.
+
+Si el paso 3 falla, se reintenta unas veces. Si aun así falla, la toma queda
+apuntando al Blob (no se pierde nada) y aparece un aviso en la pantalla de
+estadísticas para que un admin lo vea.
+
+**Los archivos son públicos para quien tenga el link.** El proxy no pide sesión
+y el archivo en Drive queda con permiso "cualquiera con el link". Es
+intencional: así el cliente puede abrir la toma que se le comparte por WhatsApp
+sin tener usuario. La contracara es que el link no se puede revocar y sigue
+funcionando aunque después se borre la toma.
+
+## Roles
+
+| Rol | Puede |
+|---|---|
+| `admin` | Todo: cargar, ver, borrar tomas, y administrar clientes y usuarios |
+| `operario` | Cargar tomas y ver el visor y las estadísticas |
+| `auditor` | Sólo ver: visor y estadísticas |
+
+Los borrados son siempre lógicos (`eliminado_en`, `activo`): no se borra nada
+de la base.
+
+## Desarrollo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Hace falta un `.env.local` con:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+| Variable | Para qué |
+|---|---|
+| `DATABASE_URL` | Conexión a Neon |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob |
+| `GOOGLE_CLIENT_ID` | OAuth de Drive |
+| `GOOGLE_CLIENT_SECRET` | OAuth de Drive |
+| `GOOGLE_REFRESH_TOKEN` | Cuenta de Drive dueña de los archivos |
+| `APP_URL` | URL base con la que se arma `archivo_url` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Un detalle que confunde en local: `archivo_url` se guarda como URL absoluta
+usando `APP_URL`. Las tomas creadas en producción apuntan al dominio de
+producción, así que abrirlas desde `localhost` sale a buscar el archivo allá.
 
-## Learn More
+## Base de datos
 
-To learn more about Next.js, take a look at the following resources:
+El esquema completo está en [`db/schema.sql`](db/schema.sql), que sirve para
+crear la base desde cero y para leer el modelo de un vistazo.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Los cambios sobre una base con datos van como scripts en `scripts/`, uno por
+migración, pensados para correrse una sola vez y ser idempotentes:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+node scripts/migrar-activo-clientes.js
+```
 
-## Deploy on Vercel
+Crear un usuario (no hay alta pública ni registro):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+node scripts/crear-usuario.js "Nombre Apellido" mail@ejemplo.com contraseña admin
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estado
+
+En producción y en uso. Sin tests automatizados: los cambios se verifican a mano
+y con `npm run lint`.

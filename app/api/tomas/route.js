@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { del } from '@vercel/blob';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { after } from 'next/server';
-import { copiarArchivoADrive } from '@/lib/googleDrive';
+import { copiarArchivoADriveConReintentos } from '@/lib/googleDrive';
 import { listarTomas } from '@/lib/tomas';
 
 export const maxDuration = 60;
@@ -39,23 +39,41 @@ export async function POST(request) {
     return Response.json({ ok: false, error: 'Los números de pedido deben ser numéricos' }, { status: 400 });
   }
 
+  // La cola de subidas puede reenviar una toma y el formulario permite repetir un valor,
+  // así que se deduplica acá y no en la base (toma_pedidos no tiene índice único).
+  const clientesUnicos = [...new Set(clienteIdsNumeros)];
+  const pedidosUnicos = [...new Set(pedidosNumeros)];
+
   const sql = neon(process.env.DATABASE_URL);
   let tomaId;
 
   try {
+    // Todo en un único statement: Postgres lo ejecuta como una sola transacción implícita,
+    // así que no puede quedar una toma guardada a medias (sin pedidos o sin clientes) si
+    // algo falla a mitad de camino. Los CTE que escriben corren siempre, aunque el SELECT
+    // final no lea su resultado.
+    //
+    // tomas.cliente_id es una columna heredada del modelo viejo de un cliente por toma.
+    // Sigue siendo NOT NULL en la base, así que se llena con el primero de la lista, pero
+    // nadie la lee: los clientes reales de una toma están en toma_clientes.
     const [toma] = await sql`
-      INSERT INTO tomas (fecha_hora, cliente_id, archivo_url, tipo, observaciones, usuario_id)
-      VALUES (${fecha_hora}, ${clienteIdsNumeros[0]}, ${archivo_url}, ${tipo}, ${observaciones || null}, ${usuario.id})
-      RETURNING id
+      WITH nueva_toma AS (
+        INSERT INTO tomas (fecha_hora, cliente_id, archivo_url, tipo, observaciones, usuario_id)
+        VALUES (${fecha_hora}, ${clientesUnicos[0]}, ${archivo_url}, ${tipo}, ${observaciones || null}, ${usuario.id})
+        RETURNING id
+      ),
+      ins_pedidos AS (
+        INSERT INTO toma_pedidos (toma_id, numero_pedido)
+        SELECT nueva_toma.id, p FROM nueva_toma, unnest(${pedidosUnicos}::int[]) AS p
+      ),
+      ins_clientes AS (
+        INSERT INTO toma_clientes (toma_id, cliente_id)
+        SELECT nueva_toma.id, c FROM nueva_toma, unnest(${clientesUnicos}::int[]) AS c
+        ON CONFLICT DO NOTHING
+      )
+      SELECT id FROM nueva_toma
     `;
     tomaId = toma.id;
-
-    for (const numero of pedidosNumeros) {
-      await sql`INSERT INTO toma_pedidos (toma_id, numero_pedido) VALUES (${tomaId}, ${numero})`;
-    }
-    for (const clienteId of new Set(clienteIdsNumeros)) {
-      await sql`INSERT INTO toma_clientes (toma_id, cliente_id) VALUES (${tomaId}, ${clienteId})`;
-    }
   } catch (error) {
     console.error('Error al guardar la toma:', error.message);
     return Response.json({ ok: false, error: 'No se pudo guardar la toma' }, { status: 500 });
@@ -65,9 +83,12 @@ export async function POST(request) {
     const sql2 = neon(process.env.DATABASE_URL);
     let drive;
     try {
-      drive = await copiarArchivoADrive(archivo_url, nombre_archivo, mime_type);
+      drive = await copiarArchivoADriveConReintentos(archivo_url, nombre_archivo, mime_type);
     } catch (error) {
-      console.error(`No se pudo copiar a Drive la toma ${tomaId}:`, error.message);
+      // La toma queda apuntando al Blob, que no se borra: no se pierde nada, pero ocupa
+      // storage y no está respaldada en Drive. Se detecta por drive_file_id IS NULL, que
+      // es lo que cuenta la pantalla de estadísticas.
+      console.error(`No se pudo copiar a Drive la toma ${tomaId} tras varios intentos:`, error.message);
       return;
     }
 

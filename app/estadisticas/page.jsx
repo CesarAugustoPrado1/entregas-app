@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { obtenerEstadisticas } from '@/lib/estadisticas';
 import { obtenerUsoDrive } from '@/lib/googleDrive';
-import { PageHeader, Card, SinPermiso } from '@/app/components/ui';
+import { PageHeader, Card, SinPermiso, Alert } from '@/app/components/ui';
 
 function formatBytes(bytes) {
   if (!bytes) return '0 B';
@@ -70,12 +70,14 @@ export default async function EstadisticasPage() {
     return <SinPermiso mensaje="No tenés permiso para ver las estadísticas." />;
   }
 
+  const esAdmin = usuario.rol === 'admin';
+
   const [estadisticasResult, usoResult] = await Promise.allSettled([obtenerEstadisticas(), obtenerUsoDrive()]);
 
   const estadisticas =
     estadisticasResult.status === 'fulfilled'
       ? estadisticasResult.value
-      : { fechaMasVieja: null, total: 0, fotos: 0, videos: 0, porMes: [], topClientes: [], porUsuario: [] };
+      : { fechaMasVieja: null, total: 0, fotos: 0, videos: 0, sinDrive: 0, porMes: [], topClientes: [], porUsuario: [] };
   const espacioBytes = usoResult.status === 'fulfilled' ? usoResult.value.usadoBytes : null;
 
   const meses = ultimosSeisMeses(estadisticas.porMes);
@@ -87,6 +89,13 @@ export default async function EstadisticasPage() {
     <main className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
         <PageHeader title="Datos y estadísticas" backHref="/" />
+
+        {esAdmin && estadisticas.sinDrive > 0 && (
+          <Alert tipo="warning">
+            {estadisticas.sinDrive} toma{estadisticas.sinDrive !== 1 ? 's' : ''} no se pudo copiar a Drive y sigue
+            ocupando espacio en Blob. Revisá los logs del deploy.
+          </Alert>
+        )}
 
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 mb-5">
           <Tile
