@@ -54,7 +54,13 @@ CREATE TABLE tomas (
   usuario_id    integer NOT NULL REFERENCES usuarios(id),
   creado_en     timestamptz NOT NULL DEFAULT now(),
   eliminado_en  timestamptz,           -- baja lógica; toda lectura filtra por IS NULL
-  eliminado_por integer REFERENCES usuarios(id)
+  eliminado_por integer REFERENCES usuarios(id),
+
+  -- Autoborrado por espacio (lib/autoborrado.js). Cuando Drive llega al umbral,
+  -- se borran de Drive los archivos más viejos, pero la fila se conserva: se
+  -- pierde la foto, no el registro de la entrega.
+  archivo_borrado_en timestamptz,      -- NULL = el archivo sigue en Drive
+  tamano_bytes       bigint            -- tamaño en Drive, para saber cuánto libera cada borrado
 );
 
 -- OJO: tomas.cliente_id está DEPRECADA.

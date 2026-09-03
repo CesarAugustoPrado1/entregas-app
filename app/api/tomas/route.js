@@ -3,6 +3,7 @@ import { del } from '@vercel/blob';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { after } from 'next/server';
 import { copiarArchivoADriveConReintentos } from '@/lib/googleDrive';
+import { liberarEspacio } from '@/lib/autoborrado';
 import { listarTomas } from '@/lib/tomas';
 
 export const maxDuration = 60;
@@ -97,7 +98,8 @@ export async function POST(request) {
     try {
       await sql2`
         UPDATE tomas
-        SET archivo_url = ${archivoProxy}, drive_url = ${drive.webViewLink}, drive_file_id = ${drive.id}
+        SET archivo_url = ${archivoProxy}, drive_url = ${drive.webViewLink}, drive_file_id = ${drive.id},
+            tamano_bytes = ${drive.tamanoBytes}
         WHERE id = ${tomaId}
       `;
     } catch (error) {
@@ -109,6 +111,15 @@ export async function POST(request) {
       await del(archivo_url);
     } catch (error) {
       console.error(`Toma ${tomaId} migrada a Drive pero no se pudo borrar el original de Blob:`, error.message);
+    }
+
+    // Recien despues de sumar el archivo nuevo se revisa si hay que hacer lugar.
+    // Va aca, en el alta, porque el requisito es que nunca se deje de poder cargar
+    // una toma por falta de espacio: se libera justo cuando entra material nuevo.
+    try {
+      await liberarEspacio();
+    } catch (error) {
+      console.error('No se pudo revisar el espacio en Drive:', error.message);
     }
   });
 

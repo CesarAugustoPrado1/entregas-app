@@ -33,6 +33,43 @@ Si el paso 3 falla, se reintenta unas veces. Si aun así falla, la toma queda
 apuntando al Blob (no se pierde nada) y aparece un aviso en la pantalla de
 estadísticas para que un admin lo vea.
 
+## Autoborrado por espacio
+
+La cuenta de Drive tiene 15 GB. Al ritmo actual (~2 GB/mes) eso da unos 6 meses
+de registros, y el requisito es que **nunca** se deje de poder cargar una toma
+nueva por falta de lugar: una foto nueva vale más que una muy vieja.
+
+Cuando Drive pasa de **14 GB**, después de cada carga se borran los archivos más
+viejos hasta bajar a 13,5 GB. El medio giga de margen evita que cada carga
+posterior vuelva a disparar el barrido.
+
+Lo que se borra es **el archivo, no el registro**. La fila de la toma queda con
+`archivo_borrado_en` marcado, así que seguís sabiendo qué se entregó, a quién,
+cuándo y quién lo cargó; lo único que se pierde es la foto. El visor las muestra
+como "archivo borrado por espacio".
+
+Orden de borrado: primero las tomas que un admin ya eliminó de la app (su
+archivo es peso muerto), después las vivas más viejas por fecha de captura.
+
+Tres frenos, porque es un borrado automático e irreversible:
+
+- Nunca se toca nada de los **últimos 30 días**, pase lo que pase con la cuota
+- Como máximo **40 archivos por corrida** (si hace falta más, sigue en la próxima carga)
+- Nunca se borra más de lo necesario para llegar al objetivo
+
+Si el umbral se supera y no hay nada borrable (todo es reciente), no se borra
+nada y queda un error en los logs: ahí hay que intervenir a mano.
+
+Para ver qué haría sin esperar a que Drive se llene, un admin puede simularlo
+con un umbral más bajo:
+
+```bash
+curl -b "sesion=TU_TOKEN" "https://TU-APP/api/mantenimiento/espacio?umbral_gb=1"
+```
+
+Ese `GET` no borra nada nunca. El `POST` al mismo endpoint fuerza una corrida
+real, pero siempre con el umbral de producción: no acepta bajarlo.
+
 **Los archivos son públicos para quien tenga el link.** El proxy no pide sesión
 y el archivo en Drive queda con permiso "cualquiera con el link". Es
 intencional: así el cliente puede abrir la toma que se le comparte por WhatsApp

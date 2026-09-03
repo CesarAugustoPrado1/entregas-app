@@ -132,8 +132,12 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
 
   const compartirSeleccionados = async () => {
     setError('');
-    const elegidas = tomas.filter((t) => seleccionados.has(t.id));
-    if (elegidas.length === 0) return;
+    // Las que ya no tienen archivo se saltean: bajarlas fallaría.
+    const elegidas = tomas.filter((t) => seleccionados.has(t.id) && !t.archivo_borrado_en);
+    if (elegidas.length === 0) {
+      setError('Las tomas elegidas ya no tienen archivo: se borró para liberar espacio.');
+      return;
+    }
 
     setCompartiendo(true);
     try {
@@ -370,7 +374,13 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                         <IconoFoto className="w-3.5 h-3.5" />
                       )}
                     </span>
-                    {t.tipo === 'video' ? (
+                    {t.archivo_borrado_en ? (
+                      <span className="text-[10px] text-muted text-center px-2 leading-tight">
+                        Archivo borrado
+                        <br />
+                        por espacio
+                      </span>
+                    ) : t.tipo === 'video' ? (
                       <video src={t.archivo_url} className="w-full h-full object-cover" muted />
                     ) : (
                       <img src={t.archivo_url} alt="" className="w-full h-full object-cover" />
@@ -427,7 +437,16 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-black flex items-center justify-center relative">
-              {tomaAbierta.tipo === 'video' ? (
+              {tomaAbierta.archivo_borrado_en ? (
+                <div className="py-16 px-6 text-center">
+                  <p className="text-sm text-gray-300">
+                    El archivo se borró el{' '}
+                    {new Date(tomaAbierta.archivo_borrado_en).toLocaleDateString('es-AR')} para liberar
+                    espacio en Drive.
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Los datos de la entrega se conservan.</p>
+                </div>
+              ) : tomaAbierta.tipo === 'video' ? (
                 <video src={tomaAbierta.archivo_url} controls className="max-h-[60vh] w-full" />
               ) : (
                 <img src={tomaAbierta.archivo_url} alt="" className="max-h-[60vh] w-full object-contain" />
@@ -483,7 +502,7 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                   <span className="text-muted">Observaciones:</span> {tomaAbierta.observaciones}
                 </p>
               )}
-              {esAdmin && tomaAbierta.drive_url && (
+              {esAdmin && tomaAbierta.drive_url && !tomaAbierta.archivo_borrado_en && (
                 <a
                   href={tomaAbierta.drive_url}
                   target="_blank"
@@ -494,7 +513,8 @@ export default function VisorTomas({ esAdmin, puedeCargar, tomasIniciales }) {
                 </a>
               )}
 
-              <div className="flex gap-2 pt-2">
+              {/* Sin archivo no hay nada que compartir: los botones mandarían un link muerto. */}
+              <div className={`flex gap-2 pt-2 ${tomaAbierta.archivo_borrado_en ? 'hidden' : ''}`}>
                 <Button className="flex-1" disabled={compartiendo} onClick={() => compartirToma(tomaAbierta)}>
                   {compartiendo ? 'Preparando...' : 'Compartir'}
                 </Button>

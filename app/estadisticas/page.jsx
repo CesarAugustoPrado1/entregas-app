@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getUsuarioActual, requiereRol } from '@/lib/auth';
 import { obtenerEstadisticas } from '@/lib/estadisticas';
 import { obtenerUsoDrive } from '@/lib/googleDrive';
+import { UMBRAL_BYTES } from '@/lib/autoborrado';
 import { PageHeader, Card, SinPermiso, Alert } from '@/app/components/ui';
 
 function formatBytes(bytes) {
@@ -77,7 +78,7 @@ export default async function EstadisticasPage() {
   const estadisticas =
     estadisticasResult.status === 'fulfilled'
       ? estadisticasResult.value
-      : { fechaMasVieja: null, total: 0, fotos: 0, videos: 0, sinDrive: 0, porMes: [], topClientes: [], porUsuario: [] };
+      : { fechaMasVieja: null, total: 0, fotos: 0, videos: 0, sinDrive: 0, sinArchivo: 0, porMes: [], topClientes: [], porUsuario: [] };
   const espacioBytes = usoResult.status === 'fulfilled' ? usoResult.value.usadoBytes : null;
 
   const meses = ultimosSeisMeses(estadisticas.porMes);
@@ -107,9 +108,20 @@ export default async function EstadisticasPage() {
             }
           />
           <Tile etiqueta="Tiempo almacenado" valor={formatDuracion(estadisticas.fechaMasVieja)} />
-          <Tile etiqueta="Espacio ocupado en Drive" valor={espacioBytes === null ? 'No disponible' : formatBytes(espacioBytes)} />
+          <Tile
+            etiqueta={`Espacio en Drive (borra a los ${formatBytes(UMBRAL_BYTES)})`}
+            valor={espacioBytes === null ? 'No disponible' : formatBytes(espacioBytes)}
+          />
           <Tile etiqueta="Total de tomas" valor={estadisticas.total} />
         </div>
+
+        {estadisticas.sinArchivo > 0 && (
+          <p className="text-xs text-muted mb-5 -mt-2">
+            {estadisticas.sinArchivo} toma{estadisticas.sinArchivo !== 1 ? 's' : ''} ya no conserva
+            {estadisticas.sinArchivo !== 1 ? 'n' : ''} el archivo: se borró automáticamente para hacer
+            lugar. Los datos de esas entregas (cliente, pedido, fecha) siguen disponibles.
+          </p>
+        )}
 
         <Card className="mb-5">
           <p className="text-sm font-semibold text-gray-900 mb-3">Foto vs. video</p>
